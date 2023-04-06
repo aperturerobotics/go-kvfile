@@ -3,7 +3,10 @@ package kvfile
 import (
 	"bytes"
 	"io"
+	"strconv"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 func TestKvStore(t *testing.T) {
@@ -81,5 +84,20 @@ func TestKvStore(t *testing.T) {
 	}
 	if !bytes.Equal(data, vals[0]) {
 		t.FailNow()
+	}
+
+	var seenVals int
+	err = rdr.ScanPrefix([]byte("test-"), func(key, value []byte) error {
+		seenVals++
+		if string(key) != "test-"+strconv.Itoa(seenVals) {
+			return errors.Errorf("unexpected key: %s", string(key))
+		}
+		if !bytes.Equal(value, vals[seenVals-1]) {
+			return errors.Errorf("unexpected value for %s: %v", string(key), value)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 }

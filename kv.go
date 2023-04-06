@@ -314,6 +314,56 @@ func (r *Reader) ReadTo(key []byte, to io.Writer) (int, bool, error) {
 	return int(nr), true, nil
 }
 
+// ScanPrefixEntries iterates over entries with the given key prefix.
+func (r *Reader) ScanPrefixEntries(prefix []byte, cb func(indexEntry *IndexEntry, indexEntryIdx int) error) error {
+	// Find the first key with the prefix.
+	firstMatch, firstIndex, err := r.SearchIndexEntry(prefix, true)
+	if err != nil || firstMatch == nil || firstIndex < 0 {
+		// return nil if none found
+		return err
+	}
+
+	// Emit the first key.
+	if err := cb(firstMatch, firstIndex); err != nil {
+		return err
+	}
+
+	// Iterate until the prefix no longer matches.
+	size := int(r.Size())
+	for i := firstIndex + 1; i < size; i++ {
+		indexEntry, err := r.ReadIndexEntry(uint64(i))
+		if err != nil {
+			return err
+		}
+		if !bytes.HasPrefix(indexEntry.GetKey(), prefix) {
+			break
+		}
+		if err := cb(indexEntry, i); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ScanPrefixKeys iterates over keys with a prefix.
+func (r *Reader) ScanPrefixKeys(prefix []byte, cb func(key []byte) error) error {
+	return r.ScanPrefixEntries(prefix, func(indexEntry *IndexEntry, indexEntryIdx int) error {
+		return cb(indexEntry.GetKey())
+	})
+}
+
+// ScanPrefix iterates over key/value pairs with a prefix.
+func (r *Reader) ScanPrefix(prefix []byte, cb func(key, value []byte) error) error {
+	return r.ScanPrefixEntries(prefix, func(indexEntry *IndexEntry, indexEntryIdx int) error {
+		data, err := r.GetWithEntry(indexEntry, indexEntryIdx)
+		if err != nil {
+			return err
+		}
+		return cb(indexEntry.GetKey(), data)
+	})
+}
+
 // KeyValue is a key-value pair.
 type KeyValue struct {
 	// Key is the key to store.
