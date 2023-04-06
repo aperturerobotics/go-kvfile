@@ -1,4 +1,4 @@
-module compressed-kv-file
+module github.com/paralin/go-kvfile
 
 go 1.20
 
