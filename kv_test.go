@@ -66,4 +66,12 @@ func TestKvStore(t *testing.T) {
 			t.Fatalf("value mismatch %s: got %v expected %v", string(keys[i]), data, vals[i])
 		}
 	}
+
+	prefixEntry, prefixIdx, err := rdr.SearchIndexEntry([]byte("test-"), true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
+		t.FailNow()
+	}
 }
