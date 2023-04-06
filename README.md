@@ -21,12 +21,15 @@ The Reader reads values from the kvfile and can search for specific keys using a
 binary search on the key index:
 
 ```
-ReadIndexEntry(): Reads the index entry at the given index.
-SearchIndexEntry(): Looks up an index entry for the given key.
-Exists(): Checks if the given key exists in the store.
-GetValuePosition(): Determines the position and length of the value for the key.
 Get(): Looks up the value for the given key.
 ReadTo(): Reads the value for the given key to the writer.
+Exists(): Checks if the given key exists in the store.
+
+ReadIndexEntry(): Reads the index entry at the given index.
+SearchIndexEntry(): Looks up an index entry for the given key.
+GetValuePosition(): Determines the position and length of the value for the key.
+ScanPrefix(): iterates over key/value pairs with a prefix.
+ScanPrefixKeys(): iterates over key/value pairs with a prefix, returning keys only.
 ```
 
 Write() writes the given key-value pairs to the file with the writer. It sorts
