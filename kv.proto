@@ -1,0 +1,11 @@
+syntax = "proto3";
+package kvfile;
+
+// IndexEntry is an entry in the index.
+// The index is sorted by key.
+message IndexEntry {
+  // Key is the key of the entry.
+  bytes key = 1;
+  // Offset is the position of the value in bytes.
+  uint64 offset = 2;
+}
