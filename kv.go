@@ -139,8 +139,9 @@ func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
 }
 
 // SearchIndexEntry looks up an index entry for the given key.
+// If keyIsPrefix, returns the entry of the first key that has the given prefix.
 // Returns nil, -1, nil, if not found.
-func (r *Reader) SearchIndexEntry(key []byte) (*IndexEntry, int, error) {
+func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix bool) (*IndexEntry, int, error) {
 	var matchedEntry *IndexEntry
 	var matchedIdx int
 	var entry *IndexEntry
@@ -173,15 +174,26 @@ func (r *Reader) SearchIndexEntry(key []byte) (*IndexEntry, int, error) {
 	if err != nil {
 		return nil, searchIdx, err
 	}
-	if !bytes.Equal(entry.GetKey(), key) {
-		return nil, -1, nil
+	if keyIsPrefix {
+		if !bytes.HasPrefix(entry.GetKey(), key) {
+			return nil, -1, nil
+		}
+	} else {
+		if !bytes.Equal(entry.GetKey(), key) {
+			return nil, -1, nil
+		}
 	}
 	return entry, searchIdx, nil
 }
 
+// Size returns the number of key/value pairs in the store.
+func (r *Reader) Size() uint64 {
+	return r.indexEntryCount
+}
+
 // Exists checks if the given key exists in the store.
 func (r *Reader) Exists(key []byte) (bool, error) {
-	_, idx, err := r.SearchIndexEntry(key)
+	_, idx, err := r.SearchIndexEntry(key, false)
 	return idx >= 0, err
 }
 
@@ -189,7 +201,7 @@ func (r *Reader) Exists(key []byte) (bool, error) {
 //
 // Returns -1, 1, nil, -1, nil if not found.
 func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
-	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key)
+	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false)
 	if indexEntryIdx < 0 {
 		return -1, -1, nil, -1, err
 	}
