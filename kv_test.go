@@ -74,4 +74,12 @@ func TestKvStore(t *testing.T) {
 	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
 		t.FailNow()
 	}
+
+	data, err := rdr.GetWithEntry(prefixEntry, prefixIdx)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if !bytes.Equal(data, vals[0]) {
+		t.FailNow()
+	}
 }

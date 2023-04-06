@@ -258,6 +258,23 @@ func (r *Reader) Get(key []byte) ([]byte, bool, error) {
 	return readBuf, true, nil
 }
 
+// GetWithEntry returns the value for the given index entry.
+func (r *Reader) GetWithEntry(indexEntry *IndexEntry, indexEntryIdx int) ([]byte, error) {
+	valueIdx, valueLen, err := r.GetValuePositionWithEntry(indexEntry, indexEntryIdx)
+	if err == nil && valueLen < 0 || valueIdx < 0 {
+		err = errors.New("entry value not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+	readBuf := make([]byte, valueLen)
+	_, err = r.rd.ReadAt(readBuf, valueIdx)
+	if err != nil {
+		return nil, err
+	}
+	return readBuf, nil
+}
+
 // ReadTo reads the value for the given key to the writer.
 //
 // Returns number of bytes read, found, and any error.
