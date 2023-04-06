@@ -197,15 +197,10 @@ func (r *Reader) Exists(key []byte) (bool, error) {
 	return idx >= 0, err
 }
 
-// GetValuePosition determines the position and length of the value for the key.
+// GetValuePositionWithEntry determines the position and length of the value with an entry.
 //
 // Returns -1, 1, nil, -1, nil if not found.
-func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
-	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false)
-	if indexEntryIdx < 0 {
-		return -1, -1, nil, -1, err
-	}
-
+func (r *Reader) GetValuePositionWithEntry(indexEntry *IndexEntry, indexEntryIdx int) (idx, length int64, err error) {
 	// determine the end of the data
 	var valueEnd int64
 	if indexEntryIdx+1 >= int(r.indexEntryCount) {
@@ -215,25 +210,37 @@ func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *In
 		// get the offset of the value after this one
 		nextIndexEntry, err := r.ReadIndexEntry(uint64(indexEntryIdx) + 1)
 		if err != nil {
-			return -1, -1, indexEntry, indexEntryIdx, err
+			return -1, -1, err
 		}
 		valueEnd = int64(nextIndexEntry.GetOffset())
 		if valueEnd > int64(r.indexEntryListPos) {
-			return -1, -1, indexEntry, indexEntryIdx, errors.Errorf("invalid offset of index entry: %v > list pos %v", valueEnd, r.indexEntryListPos)
+			return -1, -1, errors.Errorf("invalid offset of index entry: %v > list pos %v", valueEnd, r.indexEntryListPos)
 		}
 	}
 
 	valueOffset := int64(indexEntry.GetOffset())
 	if valueOffset > valueEnd {
-		return -1, -1, indexEntry, indexEntryIdx, errors.Errorf("invalid offset of index entry: %v > value end %v", valueOffset, valueEnd)
+		return -1, -1, errors.Errorf("invalid offset of index entry: %v > value end %v", valueOffset, valueEnd)
 	}
 
 	valueLen := valueEnd - valueOffset
 	if valueLen > int64(maxValueSize) {
-		return -1, -1, indexEntry, indexEntryIdx, errors.Errorf("value size %v > max size %v", valueLen, maxValueSize)
+		return -1, -1, errors.Errorf("value size %v > max size %v", valueLen, maxValueSize)
 	}
 
-	return valueOffset, valueLen, indexEntry, indexEntryIdx, nil
+	return valueOffset, valueLen, nil
+}
+
+// GetValuePosition determines the position and length of the value for the key.
+//
+// Returns -1, 1, nil, -1, nil if not found.
+func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
+	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false)
+	if indexEntryIdx < 0 {
+		return -1, -1, nil, -1, err
+	}
+	idx, length, err = r.GetValuePositionWithEntry(indexEntry, indexEntryIdx)
+	return idx, length, indexEntry, indexEntryIdx, err
 }
 
 // Get looks up the value for the given key.
