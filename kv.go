@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"math"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -46,6 +47,9 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 		return nil, err
 	}
 	indexEntryCount := binary.LittleEndian.Uint64(buf)
+	if indexEntryCount > math.MaxUint64/8 || indexEntryCount*8 > uint64(indexEntryCountPos) {
+		return nil, errors.Errorf("index entry count too large: %v", indexEntryCount)
+	}
 	indexEntryIndexesPos := indexEntryCountPos - int64(indexEntryCount*8)
 	if indexEntryIndexesPos < 0 {
 		return nil, errors.Errorf("invalid count of index entries for file size: %v", indexEntryCount)
@@ -89,7 +93,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 
 // ReadIndexEntry reads the index entry at the given index.
 func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
-	if indexEntryIdx > r.indexEntryCount {
+	if indexEntryIdx >= r.indexEntryCount {
 		return nil, errors.Errorf("out-of-bounds read of index entry: %v > %v", indexEntryIdx, r.indexEntryCount)
 	}
 	// determine the position of the entry in the positions list
