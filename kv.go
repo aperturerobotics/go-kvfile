@@ -138,11 +138,11 @@ func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
 	return indexEntry, nil
 }
 
-// SearchIndexEntry looks up an index entry for the given key.
-// If keyIsPrefix, returns the entry of the first key that has the given prefix.
-// If reverse=true and keyIsPrefix=true returns the last element that matches the prefix.
-// Returns nil, -1, nil, if not found.
-func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix, reverse bool) (*IndexEntry, int, error) {
+// SearchIndexEntryWithKey looks up an index entry for the given key.
+//
+// If not found, returns nil, idx, err and idx is the index where the searched
+// element would appear if inserted into the list.
+func (r *Reader) SearchIndexEntryWithKey(key []byte) (*IndexEntry, int, error) {
 	var entry *IndexEntry
 	var err error
 
@@ -153,8 +153,108 @@ func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix, reverse bool) (*Index
 
 		entry, err = r.ReadIndexEntry(uint64(h))
 		if err != nil {
-			return nil, 0, err
+			return nil, h, err
 		}
+
+		cmp := bytes.Compare(entry.GetKey(), key)
+		if cmp == 0 {
+			return entry, h, nil
+		}
+
+		if cmp < 0 {
+			i = h + 1 // preserves f(i-1) == false
+		} else {
+			j = h // preserves f(j) == true
+		}
+	}
+
+	return nil, i, nil
+}
+
+// SearchIndexEntryWithPrefix returns the entry of the first key with the prefix.
+//
+// If last is true returns the last element that matches the prefix.
+//
+// If the key or prefix is not found, returns nil, idx, err, where idx is the
+// element where an element with the given prefix would appear if inserted.
+func (r *Reader) SearchIndexEntryWithPrefix(prefix []byte, last bool) (*IndexEntry, int, error) {
+	// if len(prefix) is empty return the first or last element of the whole set.
+	if len(prefix) == 0 {
+		idx := 0
+		if last {
+			idx = int(r.indexEntryCount) - 1
+		}
+		if idx >= 0 && idx < int(r.indexEntryCount) {
+			ent, err := r.ReadIndexEntry(uint64(idx))
+			return ent, idx, err
+		}
+		return nil, idx, nil
+	}
+
+	i, j := 0, int(r.indexEntryCount)-1
+	var matchedEntry *IndexEntry
+	var matchedIdx int
+	for i <= j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+
+		entry, err := r.ReadIndexEntry(uint64(h))
+		if err != nil {
+			return nil, h, err
+		}
+
+		key := entry.GetKey()
+		if bytes.HasPrefix(key, prefix) {
+			matchedEntry, matchedIdx = entry, h
+			if last {
+				i = h + 1
+			} else {
+				j = h - 1
+			}
+		} else {
+			cmp := bytes.Compare(key, prefix)
+			if cmp < 0 {
+				i = h + 1
+			} else {
+				j = h - 1
+			}
+		}
+	}
+	if matchedEntry != nil {
+		return matchedEntry, matchedIdx, nil
+	}
+	/*
+		if last {
+			// iterate forward until key is >= prefix
+			for i < int(r.indexEntryCount) {
+				iEntry, err := r.ReadIndexEntry(uint64(i))
+				if err != nil {
+					return nil, i, err
+				}
+				iKey := iEntry.GetKey()
+				if bytes.Compare(iKey, prefix) >= 0 {
+					break
+				}
+				i++
+			}
+		}
+	*/
+	return nil, i, nil
+}
+
+/*
+	var entry *IndexEntry
+	var err error
+
+	// binary search from sort.Search
+	i, j := 0, int(r.indexEntryCount)
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+
+		entry, err = r.ReadIndexEntry(uint64(h))
+		if err != nil {
+			return nil, h, err
+		}
+
 		// if entry.Key == key and we want a exact match or first key w/ prefix,
 		// we can return this element right away.
 		cmp := bytes.Compare(entry.GetKey(), key)
@@ -178,25 +278,27 @@ func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix, reverse bool) (*Index
 
 	// if we didn't find it, it doesn't exist in the list.
 	if !keyIsPrefix {
-		return nil, -1, nil
+		return nil, i, nil
 	}
 
-	if i == int(r.indexEntryCount) {
+	// if i == int(r.indexEntryCount) {
+	if reverse {
 		i--
 	}
+
 	if i >= int(r.indexEntryCount) || i < 0 {
-		return nil, -1, nil
+		return nil, i, nil
 	}
 
 	entry, err = r.ReadIndexEntry(uint64(i))
 	if err != nil {
-		return nil, -1, err
+		return nil, i, err
 	}
 	if !bytes.HasPrefix(entry.GetKey(), key) {
-		return nil, -1, nil
+		return nil, i, nil
 	}
 	return entry, i, nil
-}
+*/
 
 // Size returns the number of key/value pairs in the store.
 func (r *Reader) Size() uint64 {
@@ -205,8 +307,8 @@ func (r *Reader) Size() uint64 {
 
 // Exists checks if the given key exists in the store.
 func (r *Reader) Exists(key []byte) (bool, error) {
-	_, idx, err := r.SearchIndexEntry(key, false, false)
-	return idx >= 0, err
+	elem, _, err := r.SearchIndexEntryWithKey(key)
+	return elem != nil, err
 }
 
 // GetValuePositionWithEntry determines the position and length of the value with an entry.
@@ -247,7 +349,7 @@ func (r *Reader) GetValuePositionWithEntry(indexEntry *IndexEntry, indexEntryIdx
 //
 // Returns -1, 1, nil, -1, nil if not found.
 func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
-	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false, false)
+	indexEntry, indexEntryIdx, err = r.SearchIndexEntryWithKey(key)
 	if indexEntryIdx < 0 {
 		return -1, -1, nil, -1, err
 	}
@@ -273,7 +375,7 @@ func (r *Reader) Get(key []byte) ([]byte, bool, error) {
 // GetWithEntry returns the value for the given index entry.
 func (r *Reader) GetWithEntry(indexEntry *IndexEntry, indexEntryIdx int) ([]byte, error) {
 	valueIdx, valueLen, err := r.GetValuePositionWithEntry(indexEntry, indexEntryIdx)
-	if err == nil && valueLen < 0 || valueIdx < 0 {
+	if err == nil && (valueLen < 0 || valueIdx < 0) {
 		err = errors.New("entry value not found")
 	}
 	if err != nil {
@@ -329,8 +431,8 @@ func (r *Reader) ReadTo(key []byte, to io.Writer) (int, bool, error) {
 // ScanPrefixEntries iterates over entries with the given key prefix.
 func (r *Reader) ScanPrefixEntries(prefix []byte, cb func(indexEntry *IndexEntry, indexEntryIdx int) error) error {
 	// Find the first key with the prefix.
-	firstMatch, firstIndex, err := r.SearchIndexEntry(prefix, true, false)
-	if err != nil || firstMatch == nil || firstIndex < 0 {
+	firstMatch, firstIndex, err := r.SearchIndexEntryWithPrefix(prefix, false)
+	if err != nil || firstMatch == nil {
 		// return nil if none found
 		return err
 	}

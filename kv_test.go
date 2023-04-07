@@ -70,12 +70,12 @@ func TestKvStore(t *testing.T) {
 		}
 	}
 
-	prefixEntry, prefixIdx, err := rdr.SearchIndexEntry([]byte("test-"), true, false)
+	prefixEntry, prefixIdx, err := rdr.SearchIndexEntryWithPrefix([]byte("test-"), false)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
-		t.Fatalf("search prefix reverse=true failed: %v %v", prefixIdx, string(prefixEntry.GetKey()))
+		t.Fatalf("search prefix last=false failed: %v %v", prefixIdx, string(prefixEntry.GetKey()))
 	}
 
 	data, err := rdr.GetWithEntry(prefixEntry, prefixIdx)
@@ -86,7 +86,7 @@ func TestKvStore(t *testing.T) {
 		t.FailNow()
 	}
 
-	prefixEntry, prefixIdx, err = rdr.SearchIndexEntry([]byte("test-"), true, true)
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test-"), true)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -117,11 +117,45 @@ func TestKvStore(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	prefixEntry, prefixIdx, err = rdr.SearchIndexEntry([]byte("test."), true, true)
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test-2b"), false)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	if prefixIdx != -1 || prefixEntry != nil {
+	if prefixIdx != 2 || prefixEntry != nil {
+		t.FailNow()
+	}
+
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test-2b"), true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 2 || prefixEntry != nil {
+		t.FailNow()
+	}
+
+	// . is the next char after -
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test."), false)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 3 || prefixEntry != nil {
+		t.FailNow()
+	}
+
+	// . is the next char after -
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test."), true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 3 || prefixEntry != nil {
+		t.FailNow()
+	}
+
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntryWithPrefix([]byte("test-1b"), false)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 1 || prefixEntry != nil {
 		t.FailNow()
 	}
 }
