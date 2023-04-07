@@ -70,12 +70,12 @@ func TestKvStore(t *testing.T) {
 		}
 	}
 
-	prefixEntry, prefixIdx, err := rdr.SearchIndexEntry([]byte("test-"), true)
+	prefixEntry, prefixIdx, err := rdr.SearchIndexEntry([]byte("test-"), true, false)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
-		t.FailNow()
+		t.Fatalf("search prefix reverse=true failed: %v %v", prefixIdx, string(prefixEntry.GetKey()))
 	}
 
 	data, err := rdr.GetWithEntry(prefixEntry, prefixIdx)
@@ -83,6 +83,22 @@ func TestKvStore(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	if !bytes.Equal(data, vals[0]) {
+		t.FailNow()
+	}
+
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntry([]byte("test-"), true, true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 2 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-3")) {
+		t.FailNow()
+	}
+
+	data, err = rdr.GetWithEntry(prefixEntry, prefixIdx)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if !bytes.Equal(data, vals[2]) {
 		t.FailNow()
 	}
 
@@ -96,6 +112,49 @@ func TestKvStore(t *testing.T) {
 			return errors.Errorf("unexpected value for %s: %v", string(key), value)
 		}
 		return nil
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	prefixEntry, prefixIdx, err = rdr.SearchIndexEntry([]byte("test."), true, true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != -1 || prefixEntry != nil {
+		t.FailNow()
+	}
+}
+
+func TestKvStoreEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	err := Write(&buf, nil, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	bufReader := bytes.NewReader(buf.Bytes())
+	rdr, err := BuildReader(bufReader, uint64(buf.Len()))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	ent, err := rdr.ReadIndexEntry(0)
+	if err == nil || ent != nil {
+		t.FailNow()
+	}
+
+	// verify that no keys exist
+	keyExists, err := rdr.Exists([]byte("test"))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if keyExists {
+		t.Fatal("expected no keys to exist")
+	}
+
+	err = rdr.ScanPrefix(nil, func(key, value []byte) error {
+		return errors.New("expected no keys to exist")
 	})
 	if err != nil {
 		t.Fatal(err.Error())

@@ -140,50 +140,62 @@ func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
 
 // SearchIndexEntry looks up an index entry for the given key.
 // If keyIsPrefix, returns the entry of the first key that has the given prefix.
+// If reverse=true and keyIsPrefix=true returns the last element that matches the prefix.
 // Returns nil, -1, nil, if not found.
-func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix bool) (*IndexEntry, int, error) {
-	var matchedEntry *IndexEntry
-	var matchedIdx int
+func (r *Reader) SearchIndexEntry(key []byte, keyIsPrefix, reverse bool) (*IndexEntry, int, error) {
 	var entry *IndexEntry
 	var err error
-	searchIdx := sort.Search(int(r.indexEntryCount), func(idx int) bool {
-		if err != nil || matchedEntry != nil {
-			return false
-		}
-		entry, err = r.ReadIndexEntry(uint64(idx))
+
+	// binary search from sort.Search
+	i, j := 0, int(r.indexEntryCount)
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+
+		entry, err = r.ReadIndexEntry(uint64(h))
 		if err != nil {
-			return false
+			return nil, 0, err
 		}
+		// if entry.Key == key and we want a exact match or first key w/ prefix,
+		// we can return this element right away.
 		cmp := bytes.Compare(entry.GetKey(), key)
-		if cmp == 0 {
-			matchedEntry = entry
-			matchedIdx = idx
+		if cmp == 0 && (!keyIsPrefix || !reverse) {
+			return entry, h, nil
 		}
-		return cmp >= 0
-	})
+
+		var cond bool
+		if keyIsPrefix && reverse {
+			cond = cmp <= 0
+		} else {
+			cond = cmp >= 0
+		}
+
+		if !cond {
+			i = h + 1 // preserves f(i-1) == false
+		} else {
+			j = h // preserves f(j) == true
+		}
+	}
+
+	// if we didn't find it, it doesn't exist in the list.
+	if !keyIsPrefix {
+		return nil, -1, nil
+	}
+
+	if i == int(r.indexEntryCount) {
+		i--
+	}
+	if i >= int(r.indexEntryCount) || i < 0 {
+		return nil, -1, nil
+	}
+
+	entry, err = r.ReadIndexEntry(uint64(i))
 	if err != nil {
 		return nil, -1, err
 	}
-	if matchedEntry != nil {
-		return matchedEntry, matchedIdx, nil
-	}
-	if searchIdx >= int(r.indexEntryCount) || searchIdx < 0 {
+	if !bytes.HasPrefix(entry.GetKey(), key) {
 		return nil, -1, nil
 	}
-	entry, err = r.ReadIndexEntry(uint64(searchIdx))
-	if err != nil {
-		return nil, searchIdx, err
-	}
-	if keyIsPrefix {
-		if !bytes.HasPrefix(entry.GetKey(), key) {
-			return nil, -1, nil
-		}
-	} else {
-		if !bytes.Equal(entry.GetKey(), key) {
-			return nil, -1, nil
-		}
-	}
-	return entry, searchIdx, nil
+	return entry, i, nil
 }
 
 // Size returns the number of key/value pairs in the store.
@@ -193,7 +205,7 @@ func (r *Reader) Size() uint64 {
 
 // Exists checks if the given key exists in the store.
 func (r *Reader) Exists(key []byte) (bool, error) {
-	_, idx, err := r.SearchIndexEntry(key, false)
+	_, idx, err := r.SearchIndexEntry(key, false, false)
 	return idx >= 0, err
 }
 
@@ -235,7 +247,7 @@ func (r *Reader) GetValuePositionWithEntry(indexEntry *IndexEntry, indexEntryIdx
 //
 // Returns -1, 1, nil, -1, nil if not found.
 func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
-	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false)
+	indexEntry, indexEntryIdx, err = r.SearchIndexEntry(key, false, false)
 	if indexEntryIdx < 0 {
 		return -1, -1, nil, -1, err
 	}
@@ -317,7 +329,7 @@ func (r *Reader) ReadTo(key []byte, to io.Writer) (int, bool, error) {
 // ScanPrefixEntries iterates over entries with the given key prefix.
 func (r *Reader) ScanPrefixEntries(prefix []byte, cb func(indexEntry *IndexEntry, indexEntryIdx int) error) error {
 	// Find the first key with the prefix.
-	firstMatch, firstIndex, err := r.SearchIndexEntry(prefix, true)
+	firstMatch, firstIndex, err := r.SearchIndexEntry(prefix, true, false)
 	if err != nil || firstMatch == nil || firstIndex < 0 {
 		// return nil if none found
 		return err
