@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
-	"sort"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -476,104 +475,4 @@ func (r *Reader) ScanPrefix(prefix []byte, cb func(key, value []byte) error) err
 		}
 		return cb(indexEntry.GetKey(), data)
 	})
-}
-
-// KeyValue is a key-value pair.
-type KeyValue struct {
-	// Key is the key to store.
-	Key []byte
-	// GetValue returns the value to store.
-	GetValue func(key []byte) ([]byte, error)
-}
-
-// Write writes the given key/value pairs to the store in writer.
-// Serializes and writes the key/value pairs.
-// Note: keys will be sorted by key.
-// Note: keys must not contain duplicate keys.
-// writeValue should write the given value to the writer returning the number of bytes written.
-func Write(writer io.Writer, keys [][]byte, writeValue func(wr io.Writer, key []byte) (uint64, error)) error {
-	sort.Slice(keys, func(i, j int) bool {
-		return bytes.Compare(keys[i], keys[j]) == -1
-	})
-
-	// write the values and build the index
-	index := make([]*IndexEntry, 0, len(keys))
-	var pos uint64
-	var prevKey []byte
-	for i, key := range keys {
-		if i != 0 && bytes.Equal(prevKey, key) {
-			// skip duplicate key
-			continue
-		}
-		index = append(index, &IndexEntry{
-			Key:    key,
-			Offset: pos,
-		})
-		nw, err := writeValue(writer, key)
-		if err != nil {
-			return err
-		}
-		pos += nw
-		prevKey = key
-	}
-
-	// write the index entries
-	indexEntryPos := make([]uint64, len(index)+1)
-	var buf []byte
-	for i, indexEntry := range index {
-		indexEntrySize := indexEntry.SizeVT()
-		if cap(buf) < indexEntrySize {
-			buf = make([]byte, indexEntrySize, indexEntrySize*2)
-		} else {
-			buf = buf[:indexEntrySize]
-		}
-		_, err := indexEntry.MarshalToSizedBufferVT(buf)
-		if err != nil {
-			return err
-		}
-		// write all of buf to writer
-		var nw int
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
-		// pos = the position just after the index entry
-		// this is the position of the entry size varint
-		pos += uint64(nw)
-		indexEntryPos[i] = pos
-		buf = buf[:0]
-		// write the varint size of the entry
-		buf = protowire.AppendVarint(buf, uint64(nw))
-		nw = 0
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
-		// pos = the position just after the size varint
-		pos += uint64(nw)
-	}
-
-	// write the index entry positions (fixed size uint64)
-	// the last entry position is the number of entries
-	indexEntryPos[len(indexEntryPos)-1] = uint64(len(index))
-	for _, entryPos := range indexEntryPos {
-		buf = binary.LittleEndian.AppendUint64(buf[:0], entryPos)
-		nw := 0
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
-	}
-
-	// done
-	return nil
 }
