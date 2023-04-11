@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"io/fs"
 	"math"
 
 	"github.com/pkg/errors"
@@ -88,6 +89,43 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 		indexEntryIndexesPos: uint64(indexEntryIndexesPos),
 		indexEntryListPos:    uint64(indexEntryListPos),
 	}, nil
+}
+
+// ReaderAtSeeker is a ReaderAt and a ReadSeeker.
+type ReaderAtSeeker interface {
+	io.ReaderAt
+	io.ReadSeeker
+}
+
+// BuildReaderWithSeeker constructs a new Reader with a io.ReaderSeeker reading the file size.
+func BuildReaderWithSeeker(rd ReaderAtSeeker) (*Reader, error) {
+	size, err := rd.Seek(0, io.SeekEnd)
+	if err != nil {
+		return nil, err
+	}
+	if size != 0 {
+		_, err = rd.Seek(0, io.SeekStart)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return BuildReader(rd, uint64(size))
+}
+
+// FileReaderAt is a fs.File that implements ReaderAt.
+type FileReaderAt interface {
+	fs.File
+	io.ReaderAt
+}
+
+// BuildReaderWithFile constructs a new Reader with an fs.File.
+func BuildReaderWithFile(f FileReaderAt) (*Reader, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	size := fi.Size()
+	return BuildReader(f, uint64(size))
 }
 
 // ReadIndexEntry reads the index entry at the given index.
@@ -239,65 +277,6 @@ func (r *Reader) SearchIndexEntryWithPrefix(prefix []byte, last bool) (*IndexEnt
 	*/
 	return nil, i, nil
 }
-
-/*
-	var entry *IndexEntry
-	var err error
-
-	// binary search from sort.Search
-	i, j := 0, int(r.indexEntryCount)
-	for i < j {
-		h := int(uint(i+j) >> 1) // avoid overflow when computing h
-
-		entry, err = r.ReadIndexEntry(uint64(h))
-		if err != nil {
-			return nil, h, err
-		}
-
-		// if entry.Key == key and we want a exact match or first key w/ prefix,
-		// we can return this element right away.
-		cmp := bytes.Compare(entry.GetKey(), key)
-		if cmp == 0 && (!keyIsPrefix || !reverse) {
-			return entry, h, nil
-		}
-
-		var cond bool
-		if keyIsPrefix && reverse {
-			cond = cmp <= 0
-		} else {
-			cond = cmp >= 0
-		}
-
-		if !cond {
-			i = h + 1 // preserves f(i-1) == false
-		} else {
-			j = h // preserves f(j) == true
-		}
-	}
-
-	// if we didn't find it, it doesn't exist in the list.
-	if !keyIsPrefix {
-		return nil, i, nil
-	}
-
-	// if i == int(r.indexEntryCount) {
-	if reverse {
-		i--
-	}
-
-	if i >= int(r.indexEntryCount) || i < 0 {
-		return nil, i, nil
-	}
-
-	entry, err = r.ReadIndexEntry(uint64(i))
-	if err != nil {
-		return nil, i, err
-	}
-	if !bytes.HasPrefix(entry.GetKey(), key) {
-		return nil, i, nil
-	}
-	return entry, i, nil
-*/
 
 // Size returns the number of key/value pairs in the store.
 func (r *Reader) Size() uint64 {
