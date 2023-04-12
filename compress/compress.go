@@ -8,14 +8,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// WriteCompress writes the given key/value pairs to the store in writer.
-// Uses seekable zstd compression.
-//
-// Serializes and writes the key/value pairs.
-// Note: keys will be sorted by key.
-// Note: keys must not contain duplicate keys.
-// writeValue should write the given value to the writer returning the number of bytes written.
-func WriteCompress(writer io.Writer, keys [][]byte, writeValue func(wr io.Writer, key []byte) (uint64, error)) error {
+// UseCompressedWriter builds a compressed writer and closes it after the
+// callback returns.
+func UseCompressedWriter(writer io.Writer, cb func(writer io.Writer) error) error {
 	zenc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 	if err != nil {
 		return err
@@ -27,12 +22,25 @@ func WriteCompress(writer io.Writer, keys [][]byte, writeValue func(wr io.Writer
 		return err
 	}
 
-	if err := kvfile.Write(w, keys, writeValue); err != nil {
+	if err = cb(w); err != nil {
+		_ = w.Close()
 		return err
 	}
 
-	// Close and flush seek table.
 	return w.Close()
+}
+
+// WriteCompress writes the given key/value pairs to the store in writer.
+// Uses seekable zstd compression.
+//
+// Serializes and writes the key/value pairs.
+// Note: keys will be sorted by key.
+// Note: keys must not contain duplicate keys.
+// writeValue should write the given value to the writer returning the number of bytes written.
+func WriteCompress(writer io.Writer, keys [][]byte, writeValue func(wr io.Writer, key []byte) (uint64, error)) error {
+	return UseCompressedWriter(writer, func(w io.Writer) error {
+		return kvfile.Write(w, keys, writeValue)
+	})
 }
 
 // ReadSeekerAt is the interface BuildCompressReader accepts.
