@@ -1,6 +1,6 @@
-module github.com/paralin/go-kvfile
+module github.com/aperturerobotics/go-kvfile
 
-go 1.20
+go 1.19
 
 require (
 	github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1

@@ -4,8 +4,8 @@ import (
 	"io"
 
 	seekable "github.com/SaveTheRbtz/zstd-seekable-format-go"
+	kvfile "github.com/aperturerobotics/go-kvfile"
 	"github.com/klauspost/compress/zstd"
-	kvfile "github.com/paralin/go-kvfile"
 )
 
 // WriteCompress writes the given key/value pairs to the store in writer.
