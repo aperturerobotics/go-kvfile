@@ -17,8 +17,8 @@ import (
 var maxIndexEntrySize = 2048
 
 // maxValueSize is the maximum value size we will read
-// currently set to 100Mb
-var maxValueSize uint32 = 1e8
+// currently set to 1GB
+var maxValueSize uint32 = 1e9
 
 // Reader is a key/value file reader.
 type Reader struct {
