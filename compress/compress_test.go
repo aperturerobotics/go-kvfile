@@ -33,10 +33,11 @@ func TestKvCompress(t *testing.T) {
 	}
 
 	bufReader := bytes.NewReader(buf.Bytes())
-	rdr, err := BuildCompressReader(bufReader)
+	rdr, rdrRelease, err := BuildCompressReader(bufReader)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+	defer rdrRelease()
 
 	keyExists, err := rdr.Exists(keys[0])
 	if err != nil {

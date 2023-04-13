@@ -51,27 +51,31 @@ type ReadSeekerAt interface {
 
 // BuildCompressReader reads key/value pairs from the compressed reader.
 // Uses seekable zstd compression.
-func BuildCompressReader(rd ReadSeekerAt) (*kvfile.Reader, error) {
+// Returns a function to call to release the zstd reader.
+func BuildCompressReader(rd ReadSeekerAt) (*kvfile.Reader, func(), error) {
 	dec, err := zstd.NewReader(nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	r, err := seekable.NewReader(rd, dec)
 	if err != nil {
 		dec.Close()
-		return nil, err
+		return nil, nil, err
 	}
 	size, err := r.Seek(0, io.SeekEnd)
 	if err != nil {
 		dec.Close()
 		_ = r.Close()
-		return nil, err
+		return nil, nil, err
 	}
 	kvReader, err := kvfile.BuildReader(r, uint64(size))
 	if err != nil {
 		dec.Close()
 		_ = r.Close()
-		return nil, err
+		return nil, nil, err
 	}
-	return kvReader, nil
+	return kvReader, func() {
+		dec.Close()
+		_ = r.Close()
+	}, nil
 }
