@@ -1,6 +1,6 @@
 module github.com/aperturerobotics/go-kvfile
 
-go 1.19
+go 1.20
 
 require (
 	github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1
