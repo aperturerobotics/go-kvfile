@@ -10,13 +10,14 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
-// WriteValueFunc is a function that writes the value for a key to a writer.
-type WriteValueFunc func(wr io.Writer, key []byte) (uint64, error)
-
 // WriteIteratorFunc is a function that returns key/value pairs to write.
-// The callback should return one key at a time.
-// Return nil, nil if no keys remain.
+// The callback should return one key at a time in sorted order.
+// Return nil, nil or nil, io.EOF if no keys remain.
 type KeyIteratorFunc func() (key []byte, err error)
+
+// WriteValueFunc is a function that writes the value for a key to a writer.
+// Return the number of bytes written and any error.
+type WriteValueFunc func(wr io.Writer, key []byte) (uint64, error)
 
 // Write writes the given key/value pairs to the store in writer.
 // Serializes and writes the key/value pairs.
@@ -38,11 +39,13 @@ func Write(writer io.Writer, keys [][]byte, writeValue WriteValueFunc) error {
 	}, writeValue)
 }
 
-// WriteIterator writes using the given iterator callback.
-// The callback should return one key at a time.
-// The keys MUST be sorted or an error will be returned.
-// Serializes and writes the key/value pairs.
-// Note: keys must not contain duplicate keys.
+// WriteIterator writes the key/value pairs using the given iterators.
+//
+// WriteValueFunc writes a value and returns number of bytes written and any error.
+// WriteIteratorFunc is a function that returns key/value pairs to write in sorted order.
+//
+// Note: The keys MUST be sorted or an error will be returned.
+// Note: keys must not contain duplicates.
 func WriteIterator(writer io.Writer, keyIterator KeyIteratorFunc, writeValueFunc WriteValueFunc) error {
 	// write the values and build the index
 	var index []*IndexEntry
@@ -52,6 +55,9 @@ func WriteIterator(writer io.Writer, keyIterator KeyIteratorFunc, writeValueFunc
 	for {
 		nextKey, err := keyIterator()
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return err
 		}
 		if len(nextKey) == 0 {
