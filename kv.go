@@ -455,3 +455,13 @@ func (r *Reader) ScanPrefix(prefix []byte, cb func(key, value []byte) error) err
 		return cb(indexEntry.GetKey(), data)
 	})
 }
+
+// GetValueSize looks up the size of the value for the given key without reading the value.
+// Returns -1, nil if not found.
+func (r *Reader) GetValueSize(key []byte) (int64, error) {
+	valueIdx, valueLen, _, _, err := r.GetValuePosition(key)
+	if err != nil || valueLen < 0 || valueIdx < 0 {
+		return -1, err
+	}
+	return valueLen, nil
+}
