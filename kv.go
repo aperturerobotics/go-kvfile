@@ -259,22 +259,6 @@ func (r *Reader) SearchIndexEntryWithPrefix(prefix []byte, last bool) (*IndexEnt
 	if matchedEntry != nil {
 		return matchedEntry, matchedIdx, nil
 	}
-	/*
-		if last {
-			// iterate forward until key is >= prefix
-			for i < int(r.indexEntryCount) {
-				iEntry, err := r.ReadIndexEntry(uint64(i))
-				if err != nil {
-					return nil, i, err
-				}
-				iKey := iEntry.GetKey()
-				if bytes.Compare(iKey, prefix) >= 0 {
-					break
-				}
-				i++
-			}
-		}
-	*/
 	return nil, i, nil
 }
 
@@ -366,8 +350,8 @@ func (r *Reader) ReadTo(key []byte, to io.Writer) (int, bool, error) {
 	pos := valueIdx
 	var nr int64
 	for nr < valueLen {
-		remaining := valueLen - nr
-		if len(readBuf) > int(remaining) {
+		remaining := int(valueLen - nr)
+		if len(readBuf) > remaining {
 			readBuf = readBuf[:remaining]
 		}
 		nread, err := r.rd.ReadAt(readBuf, pos)

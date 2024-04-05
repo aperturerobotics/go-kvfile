@@ -2,12 +2,19 @@ module hack
 
 go 1.22
 
+toolchain go1.22.2
+
 replace google.golang.org/protobuf => github.com/aperturerobotics/protobuf-go v1.33.1-0.20240322235918-b46c9358eab6 // aperture
 
+replace github.com/aperturerobotics/go-kvfile => ../
+
 require (
-	github.com/aperturerobotics/go-kvfile v0.4.3
+	github.com/aperturerobotics/go-kvfile v0.5.1
 	github.com/aperturerobotics/goprotowrap v0.3.1
 	github.com/aperturerobotics/starpc v0.28.0
+)
+
+require (
 	github.com/golangci/golangci-lint v1.57.2
 	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/psampaz/go-mod-outdated v0.9.0

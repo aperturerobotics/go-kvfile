@@ -74,8 +74,6 @@ github.com/alexkohler/prealloc v1.0.0 h1:Hbq0/3fJPQhNkN0dR95AVrr6R7tou91y0uHG5pO
 github.com/alexkohler/prealloc v1.0.0/go.mod h1:VetnK3dIgFBBKmg0YnD9F9x6Icjd+9cvfHR56wJVlKE=
 github.com/alingse/asasalint v0.0.11 h1:SFwnQXJ49Kx/1GghOFz1XGqHYKp21Kq1nHad/0WQRnw=
 github.com/alingse/asasalint v0.0.11/go.mod h1:nCaoMhw7a9kSJObvQyVzNTPBDbNpdocqrSP7t/cW5+I=
-github.com/aperturerobotics/go-kvfile v0.4.3 h1:FSyOL01JIzilnT/MLMOIxndLCIk1aGtkl0UWskN/ZLA=
-github.com/aperturerobotics/go-kvfile v0.4.3/go.mod h1:EztkyEY/x44m1dVz7XwK1hJctilTJZK1Ay3NPSHHAJY=
 github.com/aperturerobotics/goprotowrap v0.3.1 h1:nFCWZ4QNQEzpsgCN1mVWLDVTF/Jm0hWtlCMUMGm3p1Y=
 github.com/aperturerobotics/goprotowrap v0.3.1/go.mod h1:5tRlYsb4VF0ySzx2/My3u9PtzTWNu5o2bqYHj0TRw+U=
 github.com/aperturerobotics/protobuf-go v1.33.1-0.20240322235918-b46c9358eab6 h1:ScQPbkbABsFb7e86ArWSRtoOemQGrX4BDKeHj+JAgbQ=
