@@ -293,34 +293,16 @@ func (r *Reader) Exists(key []byte) (bool, error) {
 //
 // Returns -1, 1, nil, -1, nil if not found.
 func (r *Reader) GetValuePositionWithEntry(indexEntry *IndexEntry, indexEntryIdx int) (idx, length int64, err error) {
-	// determine the end of the data
-	var valueEnd int64
-	if indexEntryIdx+1 >= int(r.indexEntryCount) {
-		// last value: ends just before the first index entry
-		valueEnd = int64(r.indexEntryListPos)
-	} else {
-		// get the offset of the value after this one
-		nextIndexEntry, err := r.ReadIndexEntry(uint64(indexEntryIdx) + 1)
-		if err != nil {
-			return -1, -1, err
-		}
-		valueEnd = int64(nextIndexEntry.GetOffset())
-		if valueEnd > int64(r.indexEntryListPos) {
-			return -1, -1, errors.Errorf("invalid offset of index entry: %v > list pos %v", valueEnd, r.indexEntryListPos)
-		}
-	}
-
 	valueOffset := int64(indexEntry.GetOffset())
-	if valueOffset > valueEnd {
-		return -1, -1, errors.Errorf("invalid offset of index entry: %v > value end %v", valueOffset, valueEnd)
+	valueSize := int64(indexEntry.GetSize())
+	if valueSize > int64(maxValueSize) {
+		return -1, -1, errors.Errorf("value size %v > max size %v", valueSize, maxValueSize)
 	}
-
-	valueLen := valueEnd - valueOffset
-	if valueLen > int64(maxValueSize) {
-		return -1, -1, errors.Errorf("value size %v > max size %v", valueLen, maxValueSize)
+	valueEnd := valueOffset + valueSize
+	if valueEnd < valueSize || valueEnd >= int64(r.indexEntryIndexesPos) {
+		return -1, -1, errors.Errorf("value size %v out of bounds", valueSize)
 	}
-
-	return valueOffset, valueLen, nil
+	return valueOffset, valueSize, nil
 }
 
 // GetValuePosition determines the position and length of the value for the key.

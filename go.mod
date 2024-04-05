@@ -7,6 +7,7 @@ require (
 	github.com/klauspost/compress v1.17.7
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
+	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/urfave/cli/v2 v2.27.1
 	google.golang.org/protobuf v1.33.0
 )

@@ -8,4 +8,6 @@ message IndexEntry {
   bytes key = 1;
   // Offset is the position of the value in bytes.
   uint64 offset = 2;
+  // Size is the size of the value in bytes.
+  uint64 size = 3;
 }

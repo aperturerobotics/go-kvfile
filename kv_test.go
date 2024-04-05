@@ -194,3 +194,73 @@ func TestKvStoreEmpty(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+func TestWriter(t *testing.T) {
+	var buf bytes.Buffer
+	keys := [][]byte{
+		[]byte("test-2"),
+		[]byte("test-3"),
+		[]byte("test-1"),
+	}
+	vals := [][]byte{
+		[]byte("val-2"),
+		[]byte("val-3"),
+		[]byte("val-1"),
+	}
+
+	// we write the keys in the above order, use that here:
+	wr := NewWriter(&buf)
+	for i, key := range keys {
+		if err := wr.WriteValue(key, bytes.NewReader(vals[i])); err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	if err := wr.Close(); err != nil {
+		t.Fatal(err.Error())
+	}
+
+	bufReader := bytes.NewReader(buf.Bytes())
+	rdr, err := BuildReader(bufReader, uint64(buf.Len()))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	keyExists, err := rdr.Exists(keys[0])
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if !keyExists {
+		t.Fatalf("expected key to exist: %s", string(keys[0]))
+	}
+
+	keyExists, err = rdr.Exists([]byte("does-not-exist"))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if keyExists {
+		t.Fatal("expected key to not exist")
+	}
+
+	for i, key := range keys {
+		data, found, err := rdr.Get(key)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		if !found {
+			t.Fatalf("expected key to exist: %s", string(keys[i]))
+		}
+		if !bytes.Equal(data, vals[i]) {
+			t.Fatalf("value mismatch %s: got %v expected %v", string(keys[i]), data, vals[i])
+		}
+	}
+
+	prefixEntry, prefixIdx, err := rdr.SearchIndexEntryWithPrefix([]byte("test-"), false)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
+		t.Fatalf("search prefix last=false failed: %v %v", prefixIdx, string(prefixEntry.GetKey()))
+	}
+
+}

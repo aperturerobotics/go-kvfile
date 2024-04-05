@@ -5,10 +5,91 @@ import (
 	"encoding/binary"
 	"io"
 	"slices"
+	"sync"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protowire"
 )
+
+// Writer allows progressively writing values to a kvfile.
+// The index will be written once the writer is closed (flushed).
+// Note: keys must not contain duplicates or an error will be returned.
+// Concurrency safe.
+type Writer struct {
+	out io.Writer
+	mtx sync.Mutex
+	buf []byte
+	idx []*IndexEntry
+	pos uint64
+	fin bool
+}
+
+// NewWriter builds a new writer.
+func NewWriter(out io.Writer) *Writer {
+	return &Writer{out: out}
+}
+
+// WriteValue writes a key/value pair to the kvfile writer.
+//
+// The writer is closed if an error is returned.
+func (w *Writer) WriteValue(key []byte, valueRdr io.Reader) error {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+
+	if w.fin {
+		return errors.New("writer is already closed")
+	}
+
+	offset := w.pos
+	buf := w.getBufLocked()
+	nw, err := io.CopyBuffer(w.out, valueRdr, buf)
+	w.pos += uint64(nw)
+	if err != nil {
+		if err == io.EOF {
+			err = nil
+		} else {
+			w.fin = true
+		}
+	}
+
+	w.idx = append(w.idx, &IndexEntry{
+		Key:    key,
+		Offset: offset,
+		Size:   uint64(nw),
+	})
+
+	return err
+}
+
+// GetPos returns the current write position (written size).
+func (w *Writer) GetPos() uint64 {
+	return w.pos
+}
+
+// Close completes the Writer by writing the index to the file.
+func (w *Writer) Close() error {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+
+	if w.fin {
+		return errors.New("writer is already closed")
+	}
+
+	idx := w.idx
+	w.fin, w.idx = true, nil
+	nw, err := WriteIndex(w.out, idx, w.pos)
+	w.pos += nw
+	return err
+}
+
+// getBufLocked gets or allocates the scratch buffer for copies
+func (w *Writer) getBufLocked() []byte {
+	if len(w.buf) == 0 {
+		// size from io.Copy
+		w.buf = make([]byte, 32*1024)
+	}
+	return w.buf
+}
 
 // WriteIteratorFunc is a function that returns key/value pairs to write.
 // The callback should return one key at a time in the order they should be written to the file.
@@ -35,6 +116,90 @@ func Write(writer io.Writer, keys [][]byte, writeValue WriteValueFunc) error {
 	}, writeValue)
 }
 
+// WriteIndex sorts and checks the index entries and writes them to a file.
+//
+// pos is the position the writer is located at in the file.
+// returns the number of bytes written (end pos - pos).
+func WriteIndex(writer io.Writer, index []*IndexEntry, pos uint64) (uint64, error) {
+	startPos := pos
+
+	// sort the index entries
+	slices.SortStableFunc(index, func(a, b *IndexEntry) int {
+		return bytes.Compare(a.Key, b.Key)
+	})
+
+	// write the index entries
+	indexEntryPos := make([]uint64, len(index)+1)
+	var buf []byte
+	var prevKey []byte
+	for i, indexEntry := range index {
+		if i != 0 && bytes.Equal(indexEntry.Key, prevKey) {
+			return pos - startPos, errors.New("duplicate key while writing")
+		}
+		prevKey = indexEntry.Key
+
+		indexEntrySize := indexEntry.SizeVT()
+		if cap(buf) < indexEntrySize {
+			buf = make([]byte, indexEntrySize, indexEntrySize*2)
+		} else {
+			buf = buf[:indexEntrySize]
+		}
+
+		_, err := indexEntry.MarshalToSizedBufferVT(buf)
+		if err != nil {
+			return pos - startPos, err
+		}
+
+		// write all of buf to writer
+		var nw int
+		for nw < len(buf) {
+			n, err := writer.Write(buf[nw:])
+			if err != nil {
+				return pos - startPos, err
+			}
+			nw += n
+			pos += uint64(n)
+		}
+
+		// pos = the position just after the index entry
+		// this is the position of the entry size varint
+		indexEntryPos[i] = pos
+
+		// write the varint size of the entry
+		buf = buf[:0]
+		buf = protowire.AppendVarint(buf, uint64(nw))
+		nw = 0
+		for nw < len(buf) {
+			n, err := writer.Write(buf[nw:])
+			if err != nil {
+				return pos - startPos, err
+			}
+			nw += n
+			pos += uint64(nw)
+		}
+
+		// pos = the position just after the size varint
+	}
+
+	// write the index entry positions (fixed size uint64)
+	// the last entry position is the number of entries
+	indexEntryPos[len(indexEntryPos)-1] = uint64(len(index))
+	for _, entryPos := range indexEntryPos {
+		buf = binary.LittleEndian.AppendUint64(buf[:0], entryPos)
+		var nw int
+		for nw < len(buf) {
+			n, err := writer.Write(buf[nw:])
+			if err != nil {
+				return pos - startPos, err
+			}
+			nw += n
+			pos += uint64(n)
+		}
+	}
+
+	return pos - startPos, nil
+}
+
 // WriteIterator writes the key/value pairs using the given iterators.
 //
 // WriteValueFunc writes a value and returns number of bytes written and any error.
@@ -58,86 +223,22 @@ func WriteIterator(writer io.Writer, keyIterator KeyIteratorFunc, writeValueFunc
 			break
 		}
 
-		index = append(index, &IndexEntry{
-			Key:    nextKey,
-			Offset: pos,
-		})
+		offset := pos
 		nw, err := writeValueFunc(writer, nextKey)
 		if err != nil {
 			return err
 		}
 		pos += nw
+		index = append(index, &IndexEntry{
+			Key:    nextKey,
+			Offset: offset,
+			Size:   nw,
+		})
 	}
 
-	// sort the index entries
-	slices.SortStableFunc(index, func(a, b *IndexEntry) int {
-		return bytes.Compare(a.Key, b.Key)
-	})
-
-	// check for duplicates (not allowed)
-	var prevKey []byte
-	for i, ent := range index {
-		if i != 0 && bytes.Equal(ent.Key, prevKey) {
-			return errors.New("duplicate key while writing")
-		}
-		prevKey = ent.Key
-	}
-
-	// write the index entries
-	indexEntryPos := make([]uint64, len(index)+1)
-	var buf []byte
-	for i, indexEntry := range index {
-		indexEntrySize := indexEntry.SizeVT()
-		if cap(buf) < indexEntrySize {
-			buf = make([]byte, indexEntrySize, indexEntrySize*2)
-		} else {
-			buf = buf[:indexEntrySize]
-		}
-		_, err := indexEntry.MarshalToSizedBufferVT(buf)
-		if err != nil {
-			return err
-		}
-		// write all of buf to writer
-		var nw int
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
-		// pos = the position just after the index entry
-		// this is the position of the entry size varint
-		pos += uint64(nw)
-		indexEntryPos[i] = pos
-		buf = buf[:0]
-		// write the varint size of the entry
-		buf = protowire.AppendVarint(buf, uint64(nw))
-		nw = 0
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
-		// pos = the position just after the size varint
-		pos += uint64(nw)
-	}
-
-	// write the index entry positions (fixed size uint64)
-	// the last entry position is the number of entries
-	indexEntryPos[len(indexEntryPos)-1] = uint64(len(index))
-	for _, entryPos := range indexEntryPos {
-		buf = binary.LittleEndian.AppendUint64(buf[:0], entryPos)
-		nw := 0
-		for nw < len(buf) {
-			n, err := writer.Write(buf[nw:])
-			if err != nil {
-				return err
-			}
-			nw += n
-		}
+	_, err := WriteIndex(writer, index, pos)
+	if err != nil {
+		return err
 	}
 
 	// done
