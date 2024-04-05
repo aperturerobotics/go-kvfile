@@ -1,4 +1,4 @@
-# Key-value Archive File
+# Key-Value File (kvfile)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/aperturerobotics/go-kvfile.svg)](https://pkg.go.dev/github.com/aperturerobotics/go-kvfile)
 [![Go Report Card Widget]][Go Report Card]
@@ -13,6 +13,8 @@
 The values are concatenated together at the beginning of the file, followed by a
 set of length-suffixed entries containing each key and the offset of the
 associated value, followed by a list of positions of index entries.
+
+The [compress](./compress) package supports seekable-zstd compressed kvfiles.
 
 ## CLI
 
@@ -84,7 +86,7 @@ Write() writes the given key-value pairs to the file with the writer.
 
 The Writer can be used to incrementally write keys and values to a file.
 
-```
+```go
 	var buf bytes.Buffer
 	keys := [][]byte{
 		[]byte("test-2"),
