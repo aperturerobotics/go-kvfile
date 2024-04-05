@@ -310,7 +310,7 @@ func (r *Reader) GetValuePositionWithEntry(indexEntry *IndexEntry, indexEntryIdx
 // Returns -1, 1, nil, -1, nil if not found.
 func (r *Reader) GetValuePosition(key []byte) (idx, length int64, indexEntry *IndexEntry, indexEntryIdx int, err error) {
 	indexEntry, indexEntryIdx, err = r.SearchIndexEntryWithKey(key)
-	if indexEntryIdx < 0 {
+	if indexEntry == nil {
 		return -1, -1, nil, -1, err
 	}
 	idx, length, err = r.GetValuePositionWithEntry(indexEntry, indexEntryIdx)
