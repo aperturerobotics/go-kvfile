@@ -4,6 +4,10 @@
 package hack
 
 import (
+	// _ imports the parent project.
+	// this forces the versions in hack to be at least the versions in ..
+	_ "github.com/aperturerobotics/go-kvfile"
+
 	// _ imports protowrap
 	_ "github.com/aperturerobotics/goprotowrap/cmd/protowrap"
 	// _ imports protoc-gen-go
@@ -18,4 +22,8 @@ import (
 	_ "github.com/psampaz/go-mod-outdated"
 	// _ imports protoc-gen-starpc
 	_ "github.com/aperturerobotics/starpc/cmd/protoc-gen-go-starpc"
+	// _ imports goimports
+	_ "golang.org/x/tools/cmd/goimports"
+	// _ imports gofumpt
+	_ "mvdan.cc/gofumpt"
 )
