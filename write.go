@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"sort"
+	"slices"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // WriteIteratorFunc is a function that returns key/value pairs to write.
-// The callback should return one key at a time in sorted order.
+// The callback should return one key at a time in the order they should be written to the file.
 // Return nil, nil or nil, io.EOF if no keys remain.
 type KeyIteratorFunc func() (key []byte, err error)
 
@@ -21,14 +21,10 @@ type WriteValueFunc func(wr io.Writer, key []byte) (uint64, error)
 
 // Write writes the given key/value pairs to the store in writer.
 // Serializes and writes the key/value pairs.
-// Note: keys will be sorted by key.
-// Note: keys must not contain duplicate keys.
+// Note: keys must not contain duplicates or an error will be returned.
+// The values will be stored in the order of the original keys slice.
 // writeValue should write the given value to the writer returning the number of bytes written.
 func Write(writer io.Writer, keys [][]byte, writeValue WriteValueFunc) error {
-	sort.Slice(keys, func(i, j int) bool {
-		return bytes.Compare(keys[i], keys[j]) == -1
-	})
-
 	var idx int
 	return WriteIterator(writer, func() (key []byte, err error) {
 		if idx >= len(keys) {
@@ -42,15 +38,13 @@ func Write(writer io.Writer, keys [][]byte, writeValue WriteValueFunc) error {
 // WriteIterator writes the key/value pairs using the given iterators.
 //
 // WriteValueFunc writes a value and returns number of bytes written and any error.
-// WriteIteratorFunc is a function that returns key/value pairs to write in sorted order.
+// WriteIteratorFunc is a function that returns key/value pairs to write.
 //
-// Note: The keys MUST be sorted or an error will be returned.
-// Note: keys must not contain duplicates.
+// Note: keys must not contain duplicates or an error will be returned.
 func WriteIterator(writer io.Writer, keyIterator KeyIteratorFunc, writeValueFunc WriteValueFunc) error {
 	// write the values and build the index
 	var index []*IndexEntry
 	var pos uint64
-	var prevKey []byte
 
 	for {
 		nextKey, err := keyIterator()
@@ -63,29 +57,30 @@ func WriteIterator(writer io.Writer, keyIterator KeyIteratorFunc, writeValueFunc
 		if len(nextKey) == 0 {
 			break
 		}
-		if len(prevKey) != 0 {
-			// prevKey < nextKey is expected
-			// prevKey >= nextKey is an error (not sorted or duplicate)
-			cmp := bytes.Compare(prevKey, nextKey)
-			if cmp == 0 {
-				// skip duplicate key
-				continue
-			}
-			if cmp > 0 {
-				return errors.New("keys are not sorted")
-			}
-		}
 
-		prevKey = bytes.Clone(nextKey)
 		index = append(index, &IndexEntry{
-			Key:    prevKey,
+			Key:    nextKey,
 			Offset: pos,
 		})
-		nw, err := writeValueFunc(writer, prevKey)
+		nw, err := writeValueFunc(writer, nextKey)
 		if err != nil {
 			return err
 		}
 		pos += nw
+	}
+
+	// sort the index entries
+	slices.SortStableFunc(index, func(a, b *IndexEntry) int {
+		return bytes.Compare(a.Key, b.Key)
+	})
+
+	// check for duplicates (not allowed)
+	var prevKey []byte
+	for i, ent := range index {
+		if i != 0 && bytes.Equal(ent.Key, prevKey) {
+			return errors.New("duplicate key while writing")
+		}
+		prevKey = ent.Key
 	}
 
 	// write the index entries

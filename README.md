@@ -32,8 +32,7 @@ ScanPrefix(): iterates over key/value pairs with a prefix.
 ScanPrefixKeys(): iterates over key/value pairs with a prefix, returning keys only.
 ```
 
-Write() writes the given key-value pairs to the file with the writer. It sorts
-the key/value pairs by key, writes the values to the file, and builds the index.
+Write() writes the given key-value pairs to the file with the writer.
 
 ## License
 
