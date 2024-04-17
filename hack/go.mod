@@ -9,9 +9,9 @@ replace google.golang.org/protobuf => github.com/aperturerobotics/protobuf-go v1
 replace github.com/aperturerobotics/go-kvfile => ../
 
 require (
-	github.com/aperturerobotics/go-kvfile v0.5.1
+	github.com/aperturerobotics/go-kvfile v0.5.2
 	github.com/aperturerobotics/goprotowrap v0.3.1
-	github.com/aperturerobotics/starpc v0.28.0
+	github.com/aperturerobotics/starpc v0.29.1
 )
 
 require (
@@ -188,7 +188,7 @@ require (
 	go.uber.org/automaxprocs v1.5.3 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
+	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
