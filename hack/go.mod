@@ -9,12 +9,12 @@ replace google.golang.org/protobuf => github.com/aperturerobotics/protobuf-go v1
 replace github.com/aperturerobotics/go-kvfile => ../
 
 require (
-	github.com/aperturerobotics/go-kvfile v0.5.2
+	github.com/aperturerobotics/go-kvfile v0.6.1
 	github.com/aperturerobotics/goprotowrap v0.3.1
 )
 
 require (
-	github.com/aperturerobotics/protobuf-go-lite v0.4.9
+	github.com/aperturerobotics/protobuf-go-lite v0.5.0
 	github.com/golangci/golangci-lint v1.57.2
 	github.com/psampaz/go-mod-outdated v0.9.0
 	golang.org/x/tools v0.20.0
