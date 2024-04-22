@@ -262,5 +262,4 @@ func TestWriter(t *testing.T) {
 	if prefixIdx != 0 || !bytes.Equal(prefixEntry.GetKey(), []byte("test-1")) {
 		t.Fatalf("search prefix last=false failed: %v %v", prefixIdx, string(prefixEntry.GetKey()))
 	}
-
 }
