@@ -6,7 +6,7 @@ toolchain go1.22.2
 
 require (
 	github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1
-	github.com/aperturerobotics/protobuf-go-lite v0.4.9
+	github.com/aperturerobotics/protobuf-go-lite v0.5.0
 	github.com/klauspost/compress v1.17.8
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
