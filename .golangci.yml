@@ -55,6 +55,10 @@ linters-settings:
       - name: package-comments
         disabled: true
 
+  gosec:
+    excludes:
+      - G306 # Allow WriteFile permissions to be 0644.
+
 issues:
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0
