@@ -71,7 +71,7 @@ genproto: vendor node_modules $(GOIMPORTS) $(PROTOWRAP) $(PROTOC_GEN_GO)
 		$(PROTOWRAP) \
 			-I $${OUT} \
 			--go-lite_out=$${OUT} \
-			--go-lite_opt=features=marshal+unmarshal+size+equal+json+clone \
+			--go-lite_opt=features=marshal+unmarshal+size+equal+json+clone+text \
 			--proto_path $${OUT} \
 			--print_structure \
 			--only_specified_files \
