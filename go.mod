@@ -5,9 +5,9 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/aperturerobotics/common v0.14.9 // master
+	github.com/aperturerobotics/common v0.15.0 // master
 	github.com/aperturerobotics/json-iterator-lite v1.0.0 // indirect
-	github.com/aperturerobotics/protobuf-go-lite v0.6.0 // latest
+	github.com/aperturerobotics/protobuf-go-lite v0.6.1 // latest
 )
 
 require (
@@ -15,16 +15,16 @@ require (
 	github.com/klauspost/compress v1.17.8
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/urfave/cli/v2 v2.27.1
-	google.golang.org/protobuf v1.33.0
+	github.com/urfave/cli/v2 v2.27.2
+	google.golang.org/protobuf v1.34.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
