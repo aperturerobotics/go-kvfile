@@ -1,7 +1,7 @@
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1 h1:VuaOpU/0Aklkjcq8KBisGC862WTlf8bPbW3hqBrR6gs=
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1/go.mod h1:IfUnG57D5yphwHgIIeIl74Gp5VCu74GsE7h3riM4cxs=
-github.com/aperturerobotics/common v0.15.0 h1:CA+t6vxhcvkCpxqhpUzwZDbz4u5FjmtaayXYeU2VIEE=
-github.com/aperturerobotics/common v0.15.0/go.mod h1:lbKmrcn9sYjn8LsQ+dYOUJ+wjZUCNySsce6+t8r6GFk=
+github.com/aperturerobotics/common v0.15.2 h1:94z85iuQ7/CIH29ECOKKlQ3UQYFrBXNZezGRczV6Ka0=
+github.com/aperturerobotics/common v0.15.2/go.mod h1:lbKmrcn9sYjn8LsQ+dYOUJ+wjZUCNySsce6+t8r6GFk=
 github.com/aperturerobotics/json-iterator-lite v1.0.0 h1:cihbrYWoK/S2RYXhJLpDZd+GUjVvFJN+D3w1VOqqHRI=
 github.com/aperturerobotics/json-iterator-lite v1.0.0/go.mod h1:snaApCEDtrHHP6UWSLKiYNOZU9A5NyzccKenx9oZEzg=
 github.com/aperturerobotics/protobuf-go-lite v0.6.1 h1:dN4baS2e2qHhdpX57RJKUEukseXrXtqtiUJxGFFUbRs=
