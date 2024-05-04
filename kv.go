@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"math"
 
+	protobuf_go_lite "github.com/aperturerobotics/protobuf-go-lite"
 	"github.com/pkg/errors"
-	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // maxIndexEntrySize is the maximum index entry size in bytes
@@ -71,7 +71,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	indexEntrySize, indexEntrySizeLen := protowire.ConsumeVarint(buf)
+	indexEntrySize, indexEntrySizeLen := protobuf_go_lite.ConsumeVarint(buf)
 	if indexEntrySizeLen < 0 {
 		return nil, errors.Errorf("invalid index entry size varint at %v", firstIndexEntryLenPos)
 	}
@@ -152,7 +152,7 @@ func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	indexEntrySize, indexEntrySizeLen := protowire.ConsumeVarint(buf)
+	indexEntrySize, indexEntrySizeLen := protobuf_go_lite.ConsumeVarint(buf)
 	if indexEntrySizeLen < 0 {
 		return nil, errors.Errorf("invalid index entry size varint at %v", indexEntrySizePos)
 	}

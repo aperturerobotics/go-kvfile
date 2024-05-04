@@ -7,8 +7,8 @@ import (
 	"slices"
 	"sync"
 
+	protobuf_go_lite "github.com/aperturerobotics/protobuf-go-lite"
 	"github.com/pkg/errors"
-	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // Writer allows progressively writing values to a kvfile.
@@ -167,7 +167,7 @@ func WriteIndex(writer io.Writer, index []*IndexEntry, pos uint64) (uint64, erro
 
 		// write the varint size of the entry
 		buf = buf[:0]
-		buf = protowire.AppendVarint(buf, uint64(nw))
+		buf = protobuf_go_lite.AppendVarint(buf, uint64(nw))
 		nw = 0
 		for nw < len(buf) {
 			n, err := writer.Write(buf[nw:])

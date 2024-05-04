@@ -14,7 +14,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.27.2
-	google.golang.org/protobuf v1.34.0
 )
 
 require (
