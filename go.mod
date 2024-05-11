@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/aperturerobotics/common v0.15.6 // master
 	github.com/aperturerobotics/json-iterator-lite v1.0.0 // indirect
-	github.com/aperturerobotics/protobuf-go-lite v0.6.2 // latest
+	github.com/aperturerobotics/protobuf-go-lite v0.6.3 // latest
 )
 
 require (
