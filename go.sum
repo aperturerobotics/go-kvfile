@@ -1,15 +1,9 @@
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1 h1:VuaOpU/0Aklkjcq8KBisGC862WTlf8bPbW3hqBrR6gs=
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1/go.mod h1:IfUnG57D5yphwHgIIeIl74Gp5VCu74GsE7h3riM4cxs=
-github.com/aperturerobotics/common v0.15.2 h1:94z85iuQ7/CIH29ECOKKlQ3UQYFrBXNZezGRczV6Ka0=
-github.com/aperturerobotics/common v0.15.2/go.mod h1:lbKmrcn9sYjn8LsQ+dYOUJ+wjZUCNySsce6+t8r6GFk=
 github.com/aperturerobotics/common v0.15.6 h1:HsGGKilMGaDsDgjcU7/JAII6JEvAvf6APD3rUv0PeDs=
 github.com/aperturerobotics/common v0.15.6/go.mod h1:R76WABZ3PDLrAhScLVjnzsI8S0rhIVNowxbzv4f8ZdM=
 github.com/aperturerobotics/json-iterator-lite v1.0.0 h1:cihbrYWoK/S2RYXhJLpDZd+GUjVvFJN+D3w1VOqqHRI=
 github.com/aperturerobotics/json-iterator-lite v1.0.0/go.mod h1:snaApCEDtrHHP6UWSLKiYNOZU9A5NyzccKenx9oZEzg=
-github.com/aperturerobotics/protobuf-go-lite v0.6.1 h1:dN4baS2e2qHhdpX57RJKUEukseXrXtqtiUJxGFFUbRs=
-github.com/aperturerobotics/protobuf-go-lite v0.6.1/go.mod h1:6Bp+C+fI1uh0NmIKpxlxyHMkKtCP9Kb3PHkhOzxG4B8=
-github.com/aperturerobotics/protobuf-go-lite v0.6.2 h1:ee0+7IAh11lneWhR1R61prV2/7Nb/1x8muuHnqOKK7E=
-github.com/aperturerobotics/protobuf-go-lite v0.6.2/go.mod h1:YTbfnUj3feSULhs8VgepAHFnF3wUc0CPj4jd2axy21I=
 github.com/aperturerobotics/protobuf-go-lite v0.6.3 h1:AZ821ntYqzCpq6jE5rWJwJLikYbaa63Nka7YfW9EJdE=
 github.com/aperturerobotics/protobuf-go-lite v0.6.3/go.mod h1:YTbfnUj3feSULhs8VgepAHFnF3wUc0CPj4jd2axy21I=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
