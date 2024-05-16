@@ -38,8 +38,18 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
+    - name: Cache Go modules
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@ccf74c947955fd1cf117aef6a0e4e66191ef6f61 # v3.25.4
+      uses: github/codeql-action/init@b7cec7526559c32f1616476ff32d17ba4c59b2d6 # v3.25.5
       with:
         languages: ${{ matrix.language }}
 
@@ -47,4 +57,4 @@ jobs:
       run: go build -mod=readonly -v ./...
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@ccf74c947955fd1cf117aef6a0e4e66191ef6f61 # v3.25.4
+      uses: github/codeql-action/analyze@b7cec7526559c32f1616476ff32d17ba4c59b2d6 # v3.25.5
