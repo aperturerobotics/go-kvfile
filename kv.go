@@ -54,10 +54,11 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	if indexEntryIndexesPos < 0 {
 		return nil, errors.Errorf("invalid count of index entries for file size: %v", indexEntryCount)
 	}
-	// read the first index entry pos
+	// clear the buf
 	for i := 0; i < len(buf); i++ {
 		buf[i] = 0
 	}
+	// read the first index entry pos
 	_, err = rd.ReadAt(buf, indexEntryIndexesPos)
 	if err != nil {
 		return nil, err
