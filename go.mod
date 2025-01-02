@@ -3,8 +3,8 @@ module github.com/aperturerobotics/go-kvfile
 go 1.22
 
 require (
-	github.com/aperturerobotics/common v0.19.1 // master
-	github.com/aperturerobotics/json-iterator-lite v1.0.0 // indirect
+	github.com/aperturerobotics/common v0.20.3 // master
+	github.com/aperturerobotics/json-iterator-lite v1.0.1-0.20240713111131-be6bf89c3008 // indirect
 	github.com/aperturerobotics/protobuf-go-lite v0.8.0 // latest
 )
 

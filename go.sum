@@ -1,9 +1,9 @@
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1 h1:VuaOpU/0Aklkjcq8KBisGC862WTlf8bPbW3hqBrR6gs=
 github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1/go.mod h1:IfUnG57D5yphwHgIIeIl74Gp5VCu74GsE7h3riM4cxs=
-github.com/aperturerobotics/common v0.19.1 h1:i5PqIcH7sZFmdwVPpotXQlsbDESD8mSGsFcjvzggTNs=
-github.com/aperturerobotics/common v0.19.1/go.mod h1:dBvVy6IqLEnPzPVZhL02d0z0oxxpNLXrq8txmUAHLzo=
-github.com/aperturerobotics/json-iterator-lite v1.0.0 h1:cihbrYWoK/S2RYXhJLpDZd+GUjVvFJN+D3w1VOqqHRI=
-github.com/aperturerobotics/json-iterator-lite v1.0.0/go.mod h1:snaApCEDtrHHP6UWSLKiYNOZU9A5NyzccKenx9oZEzg=
+github.com/aperturerobotics/common v0.20.3 h1:pzcwAbLdyC4sgHOquGTkwK1ww/LlPscxiNpJ3u0Upg8=
+github.com/aperturerobotics/common v0.20.3/go.mod h1:S2yc+bp5PoLn0PHOAt+XXGsC50sA0MU9GF3q6FyEs9U=
+github.com/aperturerobotics/json-iterator-lite v1.0.1-0.20240713111131-be6bf89c3008 h1:So9JeziaWKx2Fw8sK4AUN/szqKtJ0jEMhS6bU4sHbxs=
+github.com/aperturerobotics/json-iterator-lite v1.0.1-0.20240713111131-be6bf89c3008/go.mod h1:snaApCEDtrHHP6UWSLKiYNOZU9A5NyzccKenx9oZEzg=
 github.com/aperturerobotics/protobuf-go-lite v0.8.0 h1:SoiTAVArmOrNTX31e6CC5Bem6HuOElg3YYNhp4AAPQc=
 github.com/aperturerobotics/protobuf-go-lite v0.8.0/go.mod h1:y49wVEezRHg78uQ2OzLLZbtTTWuox+ChmaTuh6FLJW8=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
