@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 
 	"github.com/aperturerobotics/go-kvfile"
@@ -178,6 +179,10 @@ func main() {
 					return kvfile.Write(file, keys, func(wr io.Writer, key []byte) (uint64, error) {
 						val := data[string(key)]
 						n, err := wr.Write([]byte(val))
+						// Check non-negative before conversion
+						if n < 0 {
+							return 0, errors.Wrap(err, "writer returned negative bytes written")
+						}
 						return uint64(n), err
 					})
 				},
@@ -256,6 +261,10 @@ func printAll(reader *kvfile.Reader) error {
 		key := indexEntry.GetKey()
 		printData(key, binKeys)
 
+		// Check for overflow before converting i to int
+		if i > uint64(math.MaxInt) {
+			return errors.Errorf("key index %v overflows int", i)
+		}
 		val, err := reader.GetWithEntry(indexEntry, int(i))
 		if err != nil {
 			return err

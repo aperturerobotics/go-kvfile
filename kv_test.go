@@ -28,6 +28,10 @@ func TestKvStore(t *testing.T) {
 		if err != nil {
 			return 0, err
 		}
+		// Check non-negative before conversion
+		if nw < 0 {
+			return 0, errors.New("writer returned negative bytes written")
+		}
 		index++
 		return uint64(nw), nil
 	})
@@ -36,7 +40,12 @@ func TestKvStore(t *testing.T) {
 	}
 
 	bufReader := bytes.NewReader(buf.Bytes())
-	rdr, err := BuildReader(bufReader, uint64(buf.Len()))
+	bufLen := buf.Len()
+	// Check non-negative before conversion
+	if bufLen < 0 {
+		t.Fatal("buffer length is negative")
+	}
+	rdr, err := BuildReader(bufReader, uint64(bufLen))
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -168,7 +177,12 @@ func TestKvStoreEmpty(t *testing.T) {
 	}
 
 	bufReader := bytes.NewReader(buf.Bytes())
-	rdr, err := BuildReader(bufReader, uint64(buf.Len()))
+	bufLen := buf.Len()
+	// Check non-negative before conversion
+	if bufLen < 0 {
+		t.Fatal("buffer length is negative")
+	}
+	rdr, err := BuildReader(bufReader, uint64(bufLen))
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -221,7 +235,12 @@ func TestWriter(t *testing.T) {
 	}
 
 	bufReader := bytes.NewReader(buf.Bytes())
-	rdr, err := BuildReader(bufReader, uint64(buf.Len()))
+	bufLen := buf.Len()
+	// Check non-negative before conversion
+	if bufLen < 0 {
+		t.Fatal("buffer length is negative")
+	}
+	rdr, err := BuildReader(bufReader, uint64(bufLen))
 	if err != nil {
 		t.Fatal(err.Error())
 	}

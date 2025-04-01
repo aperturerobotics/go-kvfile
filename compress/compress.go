@@ -6,6 +6,7 @@ import (
 	seekable "github.com/SaveTheRbtz/zstd-seekable-format-go"
 	kvfile "github.com/aperturerobotics/go-kvfile"
 	"github.com/klauspost/compress/zstd"
+	"github.com/pkg/errors"
 )
 
 // UseCompressedWriter builds a compressed writer and closes it after the
@@ -67,6 +68,12 @@ func BuildCompressReader(rd ReadSeekerAt) (*kvfile.Reader, func(), error) {
 		dec.Close()
 		_ = r.Close()
 		return nil, nil, err
+	}
+	// Check non-negative before conversion
+	if size < 0 {
+		dec.Close()
+		_ = r.Close()
+		return nil, nil, errors.Errorf("seek returned negative size: %d", size)
 	}
 	kvReader, err := kvfile.BuildReader(r, uint64(size))
 	if err != nil {

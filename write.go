@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"math"
 	"slices"
 	"sync"
 
@@ -43,21 +44,36 @@ func (w *Writer) WriteValue(key []byte, valueRdr io.Reader) error {
 	offset := w.pos
 	buf := w.getBufLocked()
 	nw, err := io.CopyBuffer(w.out, valueRdr, buf)
+	// io.CopyBuffer returns int64, check non-negative before uint64 conversion
+	if nw < 0 {
+		// This indicates an issue with the io.CopyBuffer implementation or the underlying writer
+		return errors.Errorf("io.CopyBuffer returned negative bytes written: %d", nw)
+	}
+	// Check for overflow before addition
+	if w.pos > math.MaxUint64-uint64(nw) {
+		w.fin = true // Mark as finished due to overflow
+		return errors.Errorf("kvfile size overflowed uint64 writing value for key %s", string(key))
+	}
 	w.pos += uint64(nw)
 	if err != nil {
 		if err == io.EOF {
+			// io.CopyBuffer documentation doesn't explicitly state it returns io.EOF.
+			// It returns nil upon successful copy of the entire source.
+			// Let's treat nil error as success. Other errors are real errors.
 			err = nil
 		} else {
 			w.fin = true
 		}
 	}
 
+	// nw is already checked non-negative
 	w.idx = append(w.idx, &IndexEntry{
 		Key:    key,
 		Offset: offset,
 		Size:   uint64(nw),
 	})
 
+	// Return the original error from io.CopyBuffer if it wasn't io.EOF
 	return err
 }
 
@@ -157,6 +173,14 @@ func WriteIndex(writer io.Writer, index []*IndexEntry, pos uint64) (uint64, erro
 			if err != nil {
 				return pos - startPos, err
 			}
+			// Check non-negative before conversion
+			if n < 0 {
+				return pos - startPos, errors.New("writer returned negative bytes written for index entry")
+			}
+			// Check for overflow before addition
+			if pos > math.MaxUint64-uint64(n) {
+				return pos - startPos, errors.New("kvfile size overflowed uint64 writing index entry")
+			}
 			nw += n
 			pos += uint64(n)
 		}
@@ -166,16 +190,31 @@ func WriteIndex(writer io.Writer, index []*IndexEntry, pos uint64) (uint64, erro
 		indexEntryPos[i] = pos
 
 		// write the varint size of the entry
+		entrySizeBytes := nw // nw is the size of the marshalled entry
 		buf = buf[:0]
-		buf = protobuf_go_lite.AppendVarint(buf, uint64(nw))
+		// Check non-negative before conversion (nw is int, should be >= 0 here)
+		if entrySizeBytes < 0 {
+			return pos - startPos, errors.New("internal error: negative index entry size")
+		}
+		buf = protobuf_go_lite.AppendVarint(buf, uint64(entrySizeBytes))
 		nw = 0
 		for nw < len(buf) {
 			n, err := writer.Write(buf[nw:])
 			if err != nil {
 				return pos - startPos, err
 			}
+			// Check non-negative before conversion
+			if n < 0 {
+				return pos - startPos, errors.New("writer returned negative bytes written for index entry size")
+			}
+			// Check for overflow before addition
+			// Note: The original code added uint64(nw) here, which seems wrong.
+			// It should add uint64(n), the number of bytes just written.
+			if pos > math.MaxUint64-uint64(n) {
+				return pos - startPos, errors.New("kvfile size overflowed uint64 writing index entry size")
+			}
 			nw += n
-			pos += uint64(nw)
+			pos += uint64(n)
 		}
 
 		// pos = the position just after the size varint
@@ -191,6 +230,14 @@ func WriteIndex(writer io.Writer, index []*IndexEntry, pos uint64) (uint64, erro
 			n, err := writer.Write(buf[nw:])
 			if err != nil {
 				return pos - startPos, err
+			}
+			// Check non-negative before conversion
+			if n < 0 {
+				return pos - startPos, errors.New("writer returned negative bytes written for index position")
+			}
+			// Check for overflow before addition
+			if pos > math.MaxUint64-uint64(n) {
+				return pos - startPos, errors.New("kvfile size overflowed uint64 writing index position")
 			}
 			nw += n
 			pos += uint64(n)

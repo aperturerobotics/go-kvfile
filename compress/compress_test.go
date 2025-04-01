@@ -2,6 +2,7 @@ package kvfile_compress
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"testing"
 )
@@ -24,6 +25,10 @@ func TestKvCompress(t *testing.T) {
 		nw, err := wr.Write(vals[index])
 		if err != nil {
 			return 0, err
+		}
+		// Check non-negative before conversion
+		if nw < 0 {
+			return 0, errors.New("writer returned negative bytes written")
 		}
 		index++
 		return uint64(nw), nil
