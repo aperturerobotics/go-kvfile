@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +12,7 @@ import (
 	kvfile_compress "github.com/aperturerobotics/go-kvfile/compress"
 	b58 "github.com/mr-tron/base58/base58"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -24,11 +25,11 @@ var (
 )
 
 func main() {
-	app := &cli.App{
+	app := &cli.Command{
 		Name:  "kvfile",
 		Usage: "A CLI tool for working with key-value files",
-		Authors: []*cli.Author{
-			{Name: "Christian Stewart", Email: "christian@aperture.us"},
+		Authors: []any{
+			"Christian Stewart <christian@aperture.us>",
 		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -61,7 +62,7 @@ func main() {
 			{
 				Name:  "count",
 				Usage: "Print the number of keys in a k/v file.",
-				Action: func(c *cli.Context) error {
+				Action: func(ctx context.Context, c *cli.Command) error {
 					reader, rel, err := openKVFile(filePath)
 					if rel != nil {
 						defer rel()
@@ -78,7 +79,7 @@ func main() {
 			{
 				Name:  "keys",
 				Usage: "Print all keys in a k/v file in sorted order.",
-				Action: func(c *cli.Context) error {
+				Action: func(ctx context.Context, c *cli.Command) error {
 					reader, rel, err := openKVFile(filePath)
 					if rel != nil {
 						defer rel()
@@ -93,7 +94,7 @@ func main() {
 			{
 				Name:  "values",
 				Usage: "Print all key-value pairs in a k/v file.",
-				Action: func(c *cli.Context) error {
+				Action: func(ctx context.Context, c *cli.Command) error {
 					reader, rel, err := openKVFile(filePath)
 					if rel != nil {
 						defer rel()
@@ -116,7 +117,7 @@ func main() {
 						Destination: &keyStr,
 					},
 				},
-				Action: func(c *cli.Context) error {
+				Action: func(ctx context.Context, c *cli.Command) error {
 					if keyStr == "" {
 						return fmt.Errorf("please provide a key")
 					}
@@ -151,7 +152,7 @@ func main() {
 						Destination: &valueStr,
 					},
 				},
-				Action: func(c *cli.Context) error {
+				Action: func(ctx context.Context, c *cli.Command) error {
 					if filePath == "" {
 						return fmt.Errorf("please provide a file path")
 					}
@@ -190,7 +191,7 @@ func main() {
 		},
 	}
 
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
