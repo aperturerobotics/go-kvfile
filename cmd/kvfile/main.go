@@ -7,11 +7,11 @@ import (
 	"math"
 	"os"
 
+	"github.com/aperturerobotics/cli"
 	"github.com/aperturerobotics/go-kvfile"
 	kvfile_compress "github.com/aperturerobotics/go-kvfile/compress"
 	b58 "github.com/mr-tron/base58/base58"
 	"github.com/pkg/errors"
-	"github.com/aperturerobotics/cli"
 )
 
 var (
