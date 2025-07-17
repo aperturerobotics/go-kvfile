@@ -327,8 +327,9 @@ func (r *Reader) SearchIndexEntryWithPrefix(prefix []byte, last bool) (*IndexEnt
 		return nil, 0, nil // Not found in empty set, insertion point 0
 	}
 	i, j := 0, count-1
+
 	var matchedEntry *IndexEntry
-	var matchedIdx int = -1 // Initialize to indicate no match found yet
+	matchedIdx := -1 // Initialize to indicate no match found yet
 	for i <= j {
 		// Calculate midpoint avoiding potential overflow of i+j
 		h := i + (j-i)/2
