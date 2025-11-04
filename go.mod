@@ -5,15 +5,15 @@ go 1.24
 toolchain go1.24.1
 
 require (
-	github.com/aperturerobotics/common v0.22.8 // master
+	github.com/aperturerobotics/common v0.22.12 // master
 	github.com/aperturerobotics/json-iterator-lite v1.0.1-0.20250712004945-4e5f8882b0b8 // indirect
-	github.com/aperturerobotics/protobuf-go-lite v0.10.0 // latest
+	github.com/aperturerobotics/protobuf-go-lite v0.11.0 // latest
 )
 
 require (
 	github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1
 	github.com/aperturerobotics/cli v1.0.0
-	github.com/klauspost/compress v1.18.0
+	github.com/klauspost/compress v1.18.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
 )
