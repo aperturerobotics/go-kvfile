@@ -1,4 +1,4 @@
-package kvfile_compress
+package kvfile_compress //nolint:revive,staticcheck
 
 import (
 	"io"

@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "protocFlagsHash": "d1e2f4b010a0a96ab92b0e7aeaf0c8765b8724b5577955d9332236d946cf6335",
+  "toolVersions": "protoc=embedded,protobuf-go-lite=v0.12.2,starpc=v0.47.1",
+  "packages": {
+    "github.com/aperturerobotics/go-kvfile": {
+      "hash": "e10245a73d1937b8e6d6541d3b620f1cd9a680727ff428279fd6cf662d60c8fc",
+      "generatedFiles": [
+        "kv.pb.cc",
+        "kv.pb.go",
+        "kv.pb.h",
+        "kv.pb.rs"
+      ],
+      "protoFiles": [
+        "kv.proto"
+      ]
+    }
+  }
+}

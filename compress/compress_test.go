@@ -1,8 +1,7 @@
-package kvfile_compress
+package kvfile_compress //nolint:revive,staticcheck
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"testing"
 )
@@ -26,12 +25,8 @@ func TestKvCompress(t *testing.T) {
 		if err != nil {
 			return 0, err
 		}
-		// Check non-negative before conversion
-		if nw < 0 {
-			return 0, errors.New("writer returned negative bytes written")
-		}
 		index++
-		return uint64(nw), nil
+		return uint64(nw), nil //nolint:gosec
 	})
 	if err != nil {
 		t.Fatal(err.Error())
@@ -60,7 +55,7 @@ func TestKvCompress(t *testing.T) {
 		t.Fatal("expected key to not exist")
 	}
 
-	for i := 0; i < len(keys); i++ {
+	for i := range keys {
 		data, found, err := rdr.Get(keys[i])
 		if err != nil {
 			t.Fatal(err.Error())

@@ -226,7 +226,7 @@ func openKVFile(filePath string) (*kvfile.Reader, func(), error) {
 
 func iterateAndPrintKeys(reader *kvfile.Reader) error {
 	size := reader.Size()
-	for i := uint64(0); i < size; i++ {
+	for i := range size {
 		indexEntry, err := reader.ReadIndexEntry(i)
 		if err != nil {
 			return err
@@ -253,7 +253,7 @@ func printAll(reader *kvfile.Reader) error {
 		return nil
 	}
 
-	for i := uint64(0); i < size; i++ {
+	for i := range size {
 		indexEntry, err := reader.ReadIndexEntry(i)
 		if err != nil {
 			return err

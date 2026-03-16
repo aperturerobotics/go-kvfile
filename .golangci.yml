@@ -46,12 +46,9 @@ linters:
         - name: package-comments
           disabled: true
     staticcheck:
-      # All SA checks are enabled by default, customize as needed.
-      # Refer to https://staticcheck.io/docs/checks for check details.
       checks:
         - all
         - '-SA1012' # Allow passing nil contexts.
-        - '-ST1003' # Example of disabling another check if needed
 
   # Exclusions based on common patterns and presets.
   exclusions:
@@ -61,8 +58,8 @@ linters:
     presets:
       - comments
       - common-false-positives
-      - legacy # Excludes checks deprecated in new Go versions
-      - std-error-handling # Excludes some common stdlib error patterns
+      - legacy
+      - std-error-handling
     # Exclude specific paths using regex.
     paths:
       - third_party$

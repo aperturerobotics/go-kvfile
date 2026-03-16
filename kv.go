@@ -74,7 +74,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	indexEntryIndexesPos := uint64(indexEntryCountPos) - indexEntriesTotalSize
 	// indexEntryIndexesPos is now uint64, no need for negative check.
 	// clear the buf
-	for i := 0; i < len(buf); i++ {
+	for i := range buf {
 		buf[i] = 0
 	}
 	// read the first index entry pos
@@ -87,7 +87,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	}
 	firstIndexEntryLenPos := binary.LittleEndian.Uint64(buf)
 	// read the size of the first index entry
-	for i := 0; i < len(buf); i++ {
+	for i := range buf {
 		buf[i] = 0
 	}
 	if firstIndexEntryLenPos > uint64(math.MaxInt64) {
@@ -142,7 +142,7 @@ func BuildReaderWithSeeker(rd ReaderAtSeeker) (*Reader, error) {
 			return nil, err
 		}
 	}
-	return BuildReader(rd, uint64(size))
+	return BuildReader(rd, uint64(size)) //nolint:gosec
 }
 
 // FileReaderAt is a fs.File that implements ReaderAt.

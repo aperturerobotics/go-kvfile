@@ -1,31 +1,39 @@
 # https://github.com/aperturerobotics/template
-PROJECT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SHELL:=bash
-MAKEFLAGS += --no-print-directory
-
-GO_VENDOR_DIR := ./vendor
-COMMON_DIR := $(GO_VENDOR_DIR)/github.com/aperturerobotics/common
-COMMON_MAKEFILE := $(COMMON_DIR)/Makefile
+APTRE := go run -mod=mod github.com/aperturerobotics/common/cmd/aptre
 
 export GO111MODULE=on
 undefine GOARCH
 undefine GOOS
 
-.PHONY: $(MAKECMDGOALS)
-
 all:
-
-$(COMMON_MAKEFILE): vendor
-	@if [ ! -f $(COMMON_MAKEFILE) ]; then \
-		echo "Please add github.com/aperturerobotics/common to your go.mod."; \
-		exit 1; \
-	fi
-
-$(MAKECMDGOALS): $(COMMON_MAKEFILE)
-	@$(MAKE) -C $(COMMON_DIR) PROJECT_DIR="$(PROJECT_DIR)" $@
-
-%: $(COMMON_MAKEFILE)
-	@$(MAKE) -C $(COMMON_DIR) PROJECT_DIR="$(PROJECT_DIR)" $@
 
 vendor:
 	go mod vendor
+
+.PHONY: genproto
+genproto:
+	$(APTRE) generate
+
+.PHONY: gen
+gen: genproto
+
+.PHONY: lint
+lint:
+	$(APTRE) lint
+
+.PHONY: fix
+fix:
+	$(APTRE) fix
+
+.PHONY: format
+format:
+	$(APTRE) format
+
+.PHONY: test
+test:
+	$(APTRE) test
+
+.PHONY: outdated
+outdated:
+	$(APTRE) outdated
