@@ -34,6 +34,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-aptre-tools-
 
+      - name: Vendor
+        run: go mod vendor
+
       - name: Test Go
         run: make test
 
