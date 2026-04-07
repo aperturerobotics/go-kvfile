@@ -3,7 +3,7 @@ module github.com/aperturerobotics/go-kvfile
 go 1.25.0
 
 require (
-	github.com/aperturerobotics/common v0.32.1 // master
+	github.com/aperturerobotics/common v0.32.2 // master
 	github.com/aperturerobotics/json-iterator-lite v1.0.1-0.20251104042408-0c9eb8a3f726 // indirect
 	github.com/aperturerobotics/protobuf-go-lite v0.12.2 // latest
 )
@@ -12,7 +12,7 @@ require (
 	github.com/SaveTheRbtz/zstd-seekable-format-go v0.6.1
 	github.com/aperturerobotics/cli v1.1.0
 	github.com/klauspost/compress v1.18.5
-	github.com/mr-tron/base58 v1.2.0
+	github.com/mr-tron/base58 v1.3.0
 	github.com/pkg/errors v0.9.1
 )
 
