@@ -195,6 +195,115 @@ func TestKvStoreEmpty(t *testing.T) {
 	}
 }
 
+func TestIndexTailReader(t *testing.T) {
+	var buf bytes.Buffer
+	keys := [][]byte{
+		[]byte("test-1"),
+		[]byte("test-2"),
+		[]byte("test-3"),
+	}
+	vals := [][]byte{
+		[]byte("val-1"),
+		[]byte("val-2"),
+		[]byte("val-3"),
+	}
+	var index int
+	err := Write(&buf, keys, func(wr io.Writer, key []byte) (uint64, error) {
+		nw, err := wr.Write(vals[index])
+		if err != nil {
+			return 0, err
+		}
+		index++
+		return uint64(nw), nil //nolint:gosec
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	fileSize := uint64(buf.Len()) //nolint:gosec
+	full := bytes.NewReader(buf.Bytes())
+	tailStart, tail, err := ReadIndexTail(full, fileSize)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if tailStart == 0 || len(tail) == 0 {
+		t.Fatalf("expected non-empty tail after values, got start=%d len=%d", tailStart, len(tail))
+	}
+	if len(tail) >= buf.Len() {
+		t.Fatalf("tail length %d should be smaller than file length %d", len(tail), buf.Len())
+	}
+	trimStart, trimmed, err := TrimIndexTail(buf.Bytes()[tailStart-1:], fileSize)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if trimStart != tailStart {
+		t.Fatalf("trimmed tail start = %d, want %d", trimStart, tailStart)
+	}
+	if !bytes.Equal(trimmed, tail) {
+		t.Fatal("trimmed suffix did not match exact tail")
+	}
+
+	rdr, err := BuildReaderWithIndexTail(tail, fileSize)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if rdr.Size() != uint64(len(keys)) {
+		t.Fatalf("tail reader size = %d, want %d", rdr.Size(), len(keys))
+	}
+	for i, key := range keys {
+		entry, idx, err := rdr.SearchIndexEntryWithKey(key)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		if entry == nil {
+			t.Fatalf("expected key %s in tail index", string(key))
+		}
+		if idx != i {
+			t.Fatalf("index for %s = %d, want %d", string(key), idx, i)
+		}
+		if entry.GetOffset() >= tailStart {
+			t.Fatalf("entry %s offset %d should point before tail start %d", string(key), entry.GetOffset(), tailStart)
+		}
+	}
+
+	if _, _, err := rdr.Get(keys[0]); err == nil {
+		t.Fatal("expected value read from tail-only reader to fail")
+	}
+}
+
+func TestIndexTailReaderEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Write(&buf, nil, nil); err != nil {
+		t.Fatal(err.Error())
+	}
+	fileSize := uint64(buf.Len()) //nolint:gosec
+	tailStart, tail, err := ReadIndexTail(bytes.NewReader(buf.Bytes()), fileSize)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if tailStart != 0 {
+		t.Fatalf("empty tail start = %d, want 0", tailStart)
+	}
+	rdr, err := BuildReaderWithIndexTail(tail, fileSize)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if rdr.Size() != 0 {
+		t.Fatalf("empty tail reader size = %d, want 0", rdr.Size())
+	}
+}
+
+func TestMaxIndexTailSize(t *testing.T) {
+	size, err := MaxIndexTailSize(3)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	want := uint64(8 + 3*(maxIndexEntrySize+10+8))
+	if size != want {
+		t.Fatalf("MaxIndexTailSize = %d, want %d", size, want)
+	}
+}
+
 func TestWriter(t *testing.T) {
 	var buf bytes.Buffer
 	keys := [][]byte{

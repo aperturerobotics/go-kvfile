@@ -33,12 +33,109 @@ type Reader struct {
 	indexEntryListPos uint64
 }
 
+type readerIndexLayout struct {
+	count      uint64
+	indexesPos uint64
+	listPos    uint64
+}
+
 // BuildReader constructs a new Reader, reading the number of index entries.
 func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	if fileSize == 0 {
 		return &Reader{rd: rd, indexEntryCount: 0}, nil
 	}
 
+	layout, err := readIndexLayout(rd, fileSize)
+	if err != nil {
+		return nil, err
+	}
+	return &Reader{
+		rd:                   rd,
+		indexEntryCount:      layout.count,
+		indexEntryIndexesPos: layout.indexesPos,
+		indexEntryListPos:    layout.listPos,
+	}, nil
+}
+
+// IndexTailOffset returns the file offset where the raw index tail starts.
+func IndexTailOffset(rd io.ReaderAt, fileSize uint64) (uint64, error) {
+	layout, err := readIndexLayout(rd, fileSize)
+	if err != nil {
+		return 0, err
+	}
+	return layout.listPos, nil
+}
+
+// ReadIndexTail reads the raw index tail bytes from a kvfile.
+func ReadIndexTail(rd io.ReaderAt, fileSize uint64) (uint64, []byte, error) {
+	start, err := IndexTailOffset(rd, fileSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	if start > fileSize {
+		return 0, nil, errors.Errorf("index tail offset %v is beyond file size %v", start, fileSize)
+	}
+	size := fileSize - start
+	if size > uint64(math.MaxInt) {
+		return 0, nil, errors.Errorf("index tail size %v overflows int", size)
+	}
+	if start > uint64(math.MaxInt64) {
+		return 0, nil, errors.Errorf("index tail offset %v overflows int64", start)
+	}
+	tail := make([]byte, int(size))
+	if err := readFullAt(rd, tail, int64(start)); err != nil {
+		return 0, nil, err
+	}
+	return start, tail, nil
+}
+
+// BuildReaderWithIndexTail constructs a Reader over raw index tail bytes.
+func BuildReaderWithIndexTail(tail []byte, fileSize uint64) (*Reader, error) {
+	if uint64(len(tail)) > fileSize {
+		return nil, errors.Errorf("index tail size %v is larger than file size %v", len(tail), fileSize)
+	}
+	base := fileSize - uint64(len(tail))
+	r := &indexTailReaderAt{base: base, data: tail}
+	reader, err := BuildReader(r, fileSize)
+	if err != nil {
+		return nil, err
+	}
+	if reader.indexEntryListPos != base {
+		return nil, errors.Errorf("index tail starts at %v, want %v", base, reader.indexEntryListPos)
+	}
+	return reader, nil
+}
+
+// TrimIndexTail trims a suffix buffer to the exact raw index tail bytes.
+func TrimIndexTail(tail []byte, fileSize uint64) (uint64, []byte, error) {
+	if uint64(len(tail)) > fileSize {
+		return 0, nil, errors.Errorf("index tail size %v is larger than file size %v", len(tail), fileSize)
+	}
+	base := fileSize - uint64(len(tail))
+	r := &indexTailReaderAt{base: base, data: tail}
+	start, err := IndexTailOffset(r, fileSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	if start < base {
+		return 0, nil, errors.Errorf("index tail suffix starts at %v after required start %v", base, start)
+	}
+	rel := start - base
+	return start, tail[rel:], nil
+}
+
+// MaxIndexTailSize returns the maximum raw tail size for entryCount entries.
+func MaxIndexTailSize(entryCount uint64) (uint64, error) {
+	if entryCount > math.MaxUint64/uint64(maxIndexEntrySize+10+8) {
+		return 0, errors.Errorf("index entry count %v too large", entryCount)
+	}
+	return 8 + entryCount*uint64(maxIndexEntrySize+10+8), nil
+}
+
+func readIndexLayout(rd io.ReaderAt, fileSize uint64) (*readerIndexLayout, error) {
+	if fileSize == 0 {
+		return &readerIndexLayout{}, nil
+	}
 	// read the number of index entries
 	if fileSize < 8 {
 		return nil, ErrFileSizeTooSmallForIndexCount
@@ -49,8 +146,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	}
 	indexEntryCountPos := int64(fileSize) - 8
 	buf := make([]byte, 8)
-	_, err := rd.ReadAt(buf, indexEntryCountPos)
-	if err != nil {
+	if err := readFullAt(rd, buf, indexEntryCountPos); err != nil {
 		return nil, err
 	}
 	indexEntryCount := binary.LittleEndian.Uint64(buf)
@@ -72,6 +168,13 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 		return nil, errors.Errorf("indexEntryCountPos %v is smaller than index entries total size %v", indexEntryCountPos, indexEntriesTotalSize)
 	}
 	indexEntryIndexesPos := uint64(indexEntryCountPos) - indexEntriesTotalSize
+	if indexEntryCount == 0 {
+		return &readerIndexLayout{
+			count:      indexEntryCount,
+			indexesPos: indexEntryIndexesPos,
+			listPos:    indexEntryIndexesPos,
+		}, nil
+	}
 	// indexEntryIndexesPos is now uint64, no need for negative check.
 	// clear the buf
 	for i := range buf {
@@ -81,8 +184,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	if indexEntryIndexesPos > uint64(math.MaxInt64) {
 		return nil, errors.Errorf("index entry indexes position %v overflows int64", indexEntryIndexesPos)
 	}
-	_, err = rd.ReadAt(buf, int64(indexEntryIndexesPos))
-	if err != nil {
+	if err := readFullAt(rd, buf, int64(indexEntryIndexesPos)); err != nil {
 		return nil, err
 	}
 	firstIndexEntryLenPos := binary.LittleEndian.Uint64(buf)
@@ -93,8 +195,7 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	if firstIndexEntryLenPos > uint64(math.MaxInt64) {
 		return nil, errors.Errorf("first index entry length position %v overflows int64", firstIndexEntryLenPos)
 	}
-	_, err = rd.ReadAt(buf, int64(firstIndexEntryLenPos))
-	if err != nil {
+	if err := readFullAt(rd, buf, int64(firstIndexEntryLenPos)); err != nil {
 		return nil, err
 	}
 	indexEntrySize, indexEntrySizeLen := protobuf_go_lite.ConsumeVarint(buf)
@@ -116,12 +217,46 @@ func BuildReader(rd io.ReaderAt, fileSize uint64) (*Reader, error) {
 	indexEntryListPos := firstIndexEntryLenPos - indexEntrySize
 	// Check for overflow before converting indexEntryListPos to int64 (though it's not used as int64 later)
 	// Check for overflow before converting indexEntryIndexesPos back to uint64 (already uint64)
-	return &Reader{
-		rd:                   rd,
-		indexEntryCount:      indexEntryCount,
-		indexEntryIndexesPos: indexEntryIndexesPos,
-		indexEntryListPos:    indexEntryListPos,
+	return &readerIndexLayout{
+		count:      indexEntryCount,
+		indexesPos: indexEntryIndexesPos,
+		listPos:    indexEntryListPos,
 	}, nil
+}
+
+func readFullAt(rd io.ReaderAt, buf []byte, off int64) error {
+	n, err := rd.ReadAt(buf, off)
+	if n == len(buf) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return io.ErrUnexpectedEOF
+}
+
+type indexTailReaderAt struct {
+	base uint64
+	data []byte
+}
+
+func (r *indexTailReaderAt) ReadAt(buf []byte, off int64) (int, error) {
+	if off < 0 {
+		return 0, errors.Errorf("negative read offset %v", off)
+	}
+	uoff := uint64(off)
+	if uoff < r.base {
+		return 0, io.EOF
+	}
+	rel := uoff - r.base
+	if rel >= uint64(len(r.data)) {
+		return 0, io.EOF
+	}
+	n := copy(buf, r.data[rel:])
+	if n < len(buf) {
+		return n, io.EOF
+	}
+	return n, nil
 }
 
 // ReaderAtSeeker is a ReaderAt and a ReadSeeker.
