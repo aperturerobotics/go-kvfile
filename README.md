@@ -1,10 +1,7 @@
 # Key-Value File (kvfile)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/aperturerobotics/go-kvfile.svg)](https://pkg.go.dev/github.com/aperturerobotics/go-kvfile)
-[![Go Report Card Widget]][Go Report Card]
 
-[Go Report Card Widget]: https://goreportcard.com/badge/github.com/aperturerobotics/go-kvfile
-[Go Report Card]: https://goreportcard.com/report/github.com/aperturerobotics/go-kvfile
 
 ## Introduction
 
