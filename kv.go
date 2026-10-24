@@ -14,7 +14,7 @@ import (
 // maxIndexEntrySize is the maximum index entry size in bytes
 // to avoid overflow attacks
 // this is also an upper bound on key length
-var maxIndexEntrySize = 2048
+const maxIndexEntrySize = 2048
 
 // maxValueSize is the maximum value size we will read
 // currently set to 1GB
@@ -126,10 +126,10 @@ func TrimIndexTail(tail []byte, fileSize uint64) (uint64, []byte, error) {
 
 // MaxIndexTailSize returns the maximum raw tail size for entryCount entries.
 func MaxIndexTailSize(entryCount uint64) (uint64, error) {
-	if entryCount > math.MaxUint64/uint64(maxIndexEntrySize+10+8) {
+	if entryCount > math.MaxUint64/(maxIndexEntrySize+10+8) {
 		return 0, errors.Errorf("index entry count %v too large", entryCount)
 	}
-	return 8 + entryCount*uint64(maxIndexEntrySize+10+8), nil
+	return 8 + entryCount*(maxIndexEntrySize+10+8), nil
 }
 
 func readIndexLayout(rd io.ReaderAt, fileSize uint64) (*readerIndexLayout, error) {
@@ -202,11 +202,7 @@ func readIndexLayout(rd io.ReaderAt, fileSize uint64) (*readerIndexLayout, error
 	if indexEntrySizeLen < 0 {
 		return nil, errors.Errorf("invalid index entry size varint at %v", firstIndexEntryLenPos)
 	}
-	// maxIndexEntrySize is int, check non-negative before conversion (though it's constant positive)
-	if maxIndexEntrySize < 0 {
-		return nil, ErrMaxIndexEntrySizeNegative
-	}
-	if indexEntrySize > uint64(maxIndexEntrySize) {
+	if indexEntrySize > maxIndexEntrySize {
 		return nil, errors.Errorf("invalid index entry size at %v: %v > %v", firstIndexEntryLenPos, indexEntrySize, maxIndexEntrySize)
 	}
 	// determine the position of the first IndexEntry entry
@@ -342,11 +338,7 @@ func (r *Reader) ReadIndexEntry(indexEntryIdx uint64) (*IndexEntry, error) {
 	if indexEntrySizeLen < 0 {
 		return nil, errors.Errorf("invalid index entry size varint at %v", indexEntrySizePos)
 	}
-	// maxIndexEntrySize is int, check non-negative before conversion (though it's constant positive)
-	if maxIndexEntrySize < 0 {
-		return nil, ErrMaxIndexEntrySizeNegative
-	}
-	if indexEntrySize > uint64(maxIndexEntrySize) {
+	if indexEntrySize > maxIndexEntrySize {
 		return nil, errors.Errorf("invalid index entry size at %v: %v > %v", indexEntrySizePos, indexEntrySize, maxIndexEntrySize)
 	}
 	// Check for underflow before subtraction
