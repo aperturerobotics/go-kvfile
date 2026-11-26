@@ -5,13 +5,18 @@
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct IndexEntry {
     /// Key is the key of the entry.
-    #[prost(bytes="vec", tag="1")]
+    #[prost(bytes = "vec", tag = "1")]
     pub key: ::prost::alloc::vec::Vec<u8>,
     /// Offset is the position of the value in bytes.
-    #[prost(uint64, tag="2")]
+    #[prost(uint64, tag = "2")]
     pub offset: u64,
     /// Size is the size of the value in bytes.
-    #[prost(uint64, tag="3")]
+    #[prost(uint64, tag = "3")]
     pub size: u64,
+    /// Reach is the end offset of the values a reader of this value usually reads
+    /// with it, such as the rest of a tree it roots, so one range read can fetch
+    /// them together. Zero when the writer recorded none.
+    #[prost(uint64, tag = "4")]
+    pub reach: u64,
 }
 // @@protoc_insertion_point(module)

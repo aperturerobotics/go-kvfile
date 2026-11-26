@@ -217,6 +217,7 @@ class IndexEntry final : public ::google::protobuf::Message
     kKeyFieldNumber = 1,
     kOffsetFieldNumber = 2,
     kSizeFieldNumber = 3,
+    kReachFieldNumber = 4,
   };
   // bytes key = 1;
   void clear_key() ;
@@ -253,11 +254,21 @@ class IndexEntry final : public ::google::protobuf::Message
   void _internal_set_size(::uint64_t value);
 
   public:
+  // uint64 reach = 4;
+  void clear_reach() ;
+  ::uint64_t reach() const;
+  void set_reach(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_reach() const;
+  void _internal_set_reach(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:kvfile.IndexEntry)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 0,
                                    2>
       _table_;
@@ -282,6 +293,7 @@ class IndexEntry final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr key_;
     ::uint64_t offset_;
     ::uint64_t size_;
+    ::uint64_t reach_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -419,6 +431,31 @@ inline ::uint64_t IndexEntry::_internal_size() const {
 inline void IndexEntry::_internal_set_size(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.size_ = value;
+}
+
+// uint64 reach = 4;
+inline void IndexEntry::clear_reach() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reach_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::uint64_t IndexEntry::reach() const {
+  // @@protoc_insertion_point(field_get:kvfile.IndexEntry.reach)
+  return _internal_reach();
+}
+inline void IndexEntry::set_reach(::uint64_t value) {
+  _internal_set_reach(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:kvfile.IndexEntry.reach)
+}
+inline ::uint64_t IndexEntry::_internal_reach() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reach_;
+}
+inline void IndexEntry::_internal_set_reach(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reach_ = value;
 }
 
 #ifdef __GNUC__

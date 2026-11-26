@@ -35,7 +35,8 @@ inline constexpr IndexEntry::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         offset_{::uint64_t{0u}},
-        size_{::uint64_t{0u}} {}
+        size_{::uint64_t{0u}},
+        reach_{::uint64_t{0u}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR IndexEntry::IndexEntry(::_pbi::ConstantInitialized)
@@ -66,13 +67,15 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::kvfile::IndexEntry, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::kvfile::IndexEntry, _impl_.key_),
         PROTOBUF_FIELD_OFFSET(::kvfile::IndexEntry, _impl_.offset_),
         PROTOBUF_FIELD_OFFSET(::kvfile::IndexEntry, _impl_.size_),
+        PROTOBUF_FIELD_OFFSET(::kvfile::IndexEntry, _impl_.reach_),
         0,
         1,
         2,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
@@ -85,15 +88,15 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_github_2ecom_2faperturerobotics_2fgo_2dkvfile_2fkv_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n.github.com/aperturerobotics/go-kvfile/"
-    "kv.proto\022\006kvfile\"7\n\nIndexEntry\022\013\n\003key\030\001 "
-    "\001(\014\022\016\n\006offset\030\002 \001(\004\022\014\n\004size\030\003 \001(\004b\006proto"
-    "3"
+    "kv.proto\022\006kvfile\"F\n\nIndexEntry\022\013\n\003key\030\001 "
+    "\001(\014\022\016\n\006offset\030\002 \001(\004\022\014\n\004size\030\003 \001(\004\022\r\n\005rea"
+    "ch\030\004 \001(\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_github_2ecom_2faperturerobotics_2fgo_2dkvfile_2fkv_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_github_2ecom_2faperturerobotics_2fgo_2dkvfile_2fkv_2eproto = {
     false,
     false,
-    121,
+    136,
     descriptor_table_protodef_github_2ecom_2faperturerobotics_2fgo_2dkvfile_2fkv_2eproto,
     "github.com/aperturerobotics/go-kvfile/kv.proto",
     &descriptor_table_github_2ecom_2faperturerobotics_2fgo_2dkvfile_2fkv_2eproto_once,
@@ -151,9 +154,9 @@ IndexEntry::IndexEntry(
                offsetof(Impl_, offset_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, offset_),
-           offsetof(Impl_, size_) -
+           offsetof(Impl_, reach_) -
                offsetof(Impl_, offset_) +
-               sizeof(Impl_::size_));
+               sizeof(Impl_::reach_));
 
   // @@protoc_insertion_point(copy_constructor:kvfile.IndexEntry)
 }
@@ -168,9 +171,9 @@ inline void IndexEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, offset_),
            0,
-           offsetof(Impl_, size_) -
+           offsetof(Impl_, reach_) -
                offsetof(Impl_, offset_) +
-               sizeof(Impl_::size_));
+               sizeof(Impl_::reach_));
 }
 IndexEntry::~IndexEntry() {
   // @@protoc_insertion_point(destructor:kvfile.IndexEntry)
@@ -230,16 +233,16 @@ IndexEntry::GetClassData() const {
   return IndexEntry_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
 IndexEntry::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     IndexEntry_class_data_.base(),
@@ -249,7 +252,10 @@ IndexEntry::_table_ = {
     ::_pbi::TcParser::GetTable<::kvfile::IndexEntry>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 reach = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(IndexEntry, _impl_.reach_), 3>(),
+     {32, 3, 0,
+      PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.reach_)}},
     // bytes key = 1;
     {::_pbi::TcParser::FastBS1,
      {10, 0, 0,
@@ -271,6 +277,8 @@ IndexEntry::_table_ = {
     {PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.offset_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 size = 3;
     {PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.size_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 reach = 4;
+    {PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.reach_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
@@ -287,10 +295,10 @@ PROTOBUF_NOINLINE void IndexEntry::Clear() {
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     _impl_.key_.ClearNonDefaultToEmpty();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
     ::memset(&_impl_.offset_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.size_) -
-        reinterpret_cast<char*>(&_impl_.offset_)) + sizeof(_impl_.size_));
+        reinterpret_cast<char*>(&_impl_.reach_) -
+        reinterpret_cast<char*>(&_impl_.offset_)) + sizeof(_impl_.reach_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -341,6 +349,15 @@ PROTOBUF_NOINLINE void IndexEntry::Clear() {
     }
   }
 
+  // uint64 reach = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_reach() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_reach(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -366,7 +383,7 @@ PROTOBUF_NOINLINE void IndexEntry::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // bytes key = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_key().empty()) {
@@ -388,6 +405,13 @@ PROTOBUF_NOINLINE void IndexEntry::Clear() {
             this_._internal_size());
       }
     }
+    // uint64 reach = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_reach() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_reach());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -407,7 +431,7 @@ void IndexEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_key().empty()) {
         _this->_internal_set_key(from._internal_key());
@@ -425,6 +449,11 @@ void IndexEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_size() != 0) {
         _this->_impl_.size_ = from._impl_.size_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_reach() != 0) {
+        _this->_impl_.reach_ = from._impl_.reach_;
       }
     }
   }
@@ -449,8 +478,8 @@ void IndexEntry::InternalSwap(IndexEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.key_, &other->_impl_.key_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.size_)
-      + sizeof(IndexEntry::_impl_.size_)
+      PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.reach_)
+      + sizeof(IndexEntry::_impl_.reach_)
       - PROTOBUF_FIELD_OFFSET(IndexEntry, _impl_.offset_)>(
           reinterpret_cast<char*>(&_impl_.offset_),
           reinterpret_cast<char*>(&other->_impl_.offset_));

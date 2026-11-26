@@ -325,6 +325,14 @@ func TestWriter(t *testing.T) {
 		}
 	}
 
+	// The first value reaches to the end of the second, written after it.
+	if err := wr.SetReach(0, wr.GetPos()-uint64(len(vals[2]))); err != nil {
+		t.Fatal(err.Error())
+	}
+	if err := wr.SetReach(wr.Len(), 1); err == nil {
+		t.Fatal("expected a reach for an unwritten value to fail")
+	}
+
 	if err := wr.Close(); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -333,6 +341,34 @@ func TestWriter(t *testing.T) {
 	rdr, err := BuildReader(bufReader, uint64(buf.Len())) //nolint:gosec
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+
+	// The reach reads back from the index; a value without one reads zero.
+	reachEntry, _, err := rdr.SearchIndexEntryWithKey(keys[0])
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if want := uint64(len(vals[0]) + len(vals[1])); reachEntry.GetReach() != want {
+		t.Fatalf("reach: got %d expected %d", reachEntry.GetReach(), want)
+	}
+	plainEntry, _, err := rdr.SearchIndexEntryWithKey(keys[1])
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if plainEntry.GetReach() != 0 {
+		t.Fatalf("reach of a value without one: got %d", plainEntry.GetReach())
+	}
+
+	// A reach past the values' end fails the close.
+	bad := NewWriter(&bytes.Buffer{})
+	if err := bad.WriteValue(keys[0], bytes.NewReader(vals[0])); err != nil {
+		t.Fatal(err.Error())
+	}
+	if err := bad.SetReach(0, bad.GetPos()+1); err != nil {
+		t.Fatal(err.Error())
+	}
+	if err := bad.Close(); err == nil {
+		t.Fatal("expected a reach past the values to fail the close")
 	}
 
 	keyExists, err := rdr.Exists(keys[0])

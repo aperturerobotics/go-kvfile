@@ -77,6 +77,32 @@ func (w *Writer) WriteValue(key []byte, valueRdr io.Reader) error {
 	return err
 }
 
+// Len returns the number of values written so far. The next value written is
+// value Len().
+func (w *Writer) Len() int {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+	return len(w.idx)
+}
+
+// SetReach records reach as the reach of value i, counted in write order, as
+// IndexEntry describes. A writer learns a value's reach after writing the
+// values it covers, so it sets the reach before Close and not with the value.
+// The reach must lie within the values written by Close.
+func (w *Writer) SetReach(i int, reach uint64) error {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+
+	if w.fin {
+		return errors.New("writer is already closed")
+	}
+	if i < 0 || i >= len(w.idx) {
+		return errors.Errorf("value %d not written", i)
+	}
+	w.idx[i].Reach = reach
+	return nil
+}
+
 // GetPos returns the current write position (written size).
 func (w *Writer) GetPos() uint64 {
 	return w.pos
@@ -93,6 +119,11 @@ func (w *Writer) Close() error {
 
 	idx := w.idx
 	w.fin, w.idx = true, nil
+	for _, entry := range idx {
+		if entry.Reach > w.pos {
+			return errors.Errorf("reach %d of key %q is past the values' end %d", entry.Reach, entry.Key, w.pos)
+		}
+	}
 	nw, err := WriteIndex(w.out, idx, w.pos)
 	w.pos += nw
 	return err

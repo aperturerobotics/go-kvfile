@@ -10,4 +10,8 @@ message IndexEntry {
   uint64 offset = 2;
   // Size is the size of the value in bytes.
   uint64 size = 3;
+  // Reach is the end offset of the values a reader of this value usually reads
+  // with it, such as the rest of a tree it roots, so one range read can fetch
+  // them together. Zero when the writer recorded none.
+  uint64 reach = 4;
 }
